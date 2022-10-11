@@ -2,6 +2,7 @@ file(GLOB HEADERS
      "include/koinos/state_db/*.hpp"
      "include/koinos/state_db/detail/*.hpp"
      "include/koinos/state_db/backends/*.hpp"
+     "include/koinos/state_db/backends/map/*.hpp"
      "include/koinos/state_db/backends/rocksdb/*.hpp")
 add_library(koinos_state_db
             state_db.cpp
