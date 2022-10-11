@@ -17,7 +17,7 @@ add_library(koinos_state_db
             ${HEADERS} )
 
 target_link_libraries(koinos_state_db Koinos::exception Koinos::proto Koinos::crypto RocksDB::rocksdb)
-target_include_directories(koinos_state_sb PUBLIC
+target_include_directories(koinos_state_db PUBLIC
    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
    $<INSTALL_INTERFACE:include>
 )
