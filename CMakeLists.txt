@@ -117,7 +117,9 @@ find_package(koinos_crypto CONFIG REQUIRED)
 
 
 add_subdirectory(libraries)
-add_subdirectory(tests)
+if (BUILD_TESTS)
+   add_subdirectory(tests)
+endif()
 
 # Install a pkg-config file, so other tools can find this.
 configure_file(
