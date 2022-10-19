@@ -72,46 +72,70 @@ void state_delta::squash()
    }
 }
 
-void state_delta::commit_helper()
-{
-   if ( is_root() )
-      return;
-
-   _parent->commit_helper();
-
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _parent->_backend )->start_write_batch();
-
-   for ( const key_type& r_key : _removed_objects )
-   {
-      _parent->_backend->erase( r_key );
-   }
-
-   for ( auto itr = _backend->begin(); itr != _backend->end(); ++itr )
-   {
-      _parent->_backend->put( itr.key(), *itr );
-   }
-
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _parent->_backend )->end_write_batch();
-
-   _backend = std::move( _parent->_backend );
-}
-
 void state_delta::commit()
 {
+   /**
+    * commit works in two distinct phases. The first is head recursion until we are at the root
+    * delta. At the root, we grab the backend and begin a write batch that will encompass all
+    * state writes and the final write of the metadata.
+    *
+    * The second phase is popping off the stack, writing state to the backend. After all deltas
+    * have been written to the backend, we write metadata to the backend and end the write batch.
+    *
+    * The result is this delta becomes the new root delta and state is written to the root backend
+    * atomically.
+    */
    KOINOS_ASSERT( !is_root(), internal_error, "cannot commit root" );
 
-   auto current_merkle_root = merkle_root();
-   protocol::block_header header = block_header();
+   std::vector< std::shared_ptr< state_delta > > node_stack;
+   auto current_node = shared_from_this();
 
-   // As a side effect, get_root()->_backend has been moved to _backend
-   commit_helper();
+   while ( current_node )
+   {
+      node_stack.push_back( current_node );
+      current_node = current_node->_parent;
+   }
 
-   _backend->set_block_header( header );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_revision( _revision );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_id( _id );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_merkle_root( current_merkle_root );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->store_metadata();
+   // Because we already asserted we were not root, there will always exist a minimum of two nodes in the stack,
+   // this and root.
+   auto backend = node_stack.back()->_backend;
+   node_stack.back()->_backend.reset();
+   node_stack.pop_back();
+
+   // Start the write batch
+   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->start_write_batch();
+
+   // While there are nodes on the stack, write them to the backend
+   while ( node_stack.size() )
+   {
+      auto& node = node_stack.back();
+
+      for ( const key_type& r_key : node->_removed_objects )
+      {
+         backend->erase( r_key );
+      }
+
+      for ( auto itr = node->_backend->begin(); itr != node->_backend->end(); ++itr )
+      {
+         backend->put( itr.key(), *itr );
+      }
+
+      node_stack.pop_back();
+   }
+
+   // Update metadata on the backend
+   backend->set_block_header( block_header() );
+   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_revision( _revision );
+   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_id( _id );
+   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_merkle_root( merkle_root() );
+   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->store_metadata();
+
+   // End the write batch making the entire merge atomic
+   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->end_write_batch();
+
+   // Reset local variables to match new status as root delta
    _removed_objects.clear();
+   _backend = backend;
    _parent.reset();
 }
 
