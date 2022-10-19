@@ -110,6 +110,7 @@ void state_delta::commit()
    std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_revision( _revision );
    std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_id( _id );
    std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_merkle_root( current_merkle_root );
+   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->store_metadata();
    _removed_objects.clear();
    _parent.reset();
 }

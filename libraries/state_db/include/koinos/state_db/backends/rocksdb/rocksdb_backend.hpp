@@ -57,9 +57,10 @@ class rocksdb_backend final : public abstract_backend {
       virtual const protocol::block_header& block_header() const override;
       virtual void set_block_header( const protocol::block_header& ) override;
 
+      void store_metadata();
+
    private:
       void load_metadata();
-      void store_metadata();
 
       using column_handles = std::vector< std::shared_ptr< ::rocksdb::ColumnFamilyHandle > >;
 
