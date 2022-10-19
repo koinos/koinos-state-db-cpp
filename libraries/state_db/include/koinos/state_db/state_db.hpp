@@ -229,6 +229,16 @@ class database final
       state_node_ptr get_node_at_revision( uint64_t revision, const shared_lock_ptr& lock ) const;
 
       /**
+       * Get an ancestor of a node at a particular revision
+       *
+       * WARNING: The state node returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      state_node_ptr get_node_at_revision( uint64_t revision, const state_node_id& child_id, const unique_lock_ptr& lock ) const;
+
+      /**
        * Get the state_node for the given state_node_id.
        *
        * Return an empty pointer if no node for the given id exists.

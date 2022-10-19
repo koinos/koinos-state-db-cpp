@@ -116,6 +116,7 @@ class database_impl final
 
       void reset( const unique_lock_ptr& lock );
       state_node_ptr get_node_at_revision( uint64_t revision, const state_node_id& child, const shared_lock_ptr& lock ) const;
+      state_node_ptr get_node_at_revision( uint64_t revision, const state_node_id& child, const unique_lock_ptr& lock ) const;
       state_node_ptr get_node( const state_node_id& node_id, const shared_lock_ptr& lock ) const;
       state_node_ptr get_node_lockless( const state_node_id& node_id ) const;
       state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
@@ -293,6 +294,43 @@ state_node_ptr database_impl::get_node_at_revision( uint64_t revision, const sta
    auto node = std::make_shared< state_node >();
    node->_impl->_state = *node_itr;
    node->_impl->_lock = lock;
+   return node;
+}
+
+state_node_ptr database_impl::get_node_at_revision( uint64_t revision, const state_node_id& child_id, const unique_lock_ptr& lock ) const
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   KOINOS_ASSERT( is_open(), database_not_open, "database is not open" );
+   KOINOS_ASSERT( revision >= _root->revision(), illegal_argument,
+      "cannot ask for node with revision less than root. root rev: ${root}, requested: ${req}",
+      ("root", _root->revision())("req", revision) );
+
+   if( revision == _root->revision() )
+   {
+      auto root = get_root_lockless();
+
+      return root;
+   }
+
+   auto child = get_node_lockless( child_id );
+   if( !child )
+      child = get_head_lockless();
+
+   state_delta_ptr delta = child->_impl->_state;
+
+   while( delta->revision() > revision )
+   {
+      delta = delta->parent();
+   }
+
+   auto node_itr = _index.find( delta->id() );
+
+   KOINOS_ASSERT( node_itr != _index.end(), internal_error,
+      "could not find state node associated with linked state_delta ${id}", ("id", delta->id() ) );
+
+   auto node = std::make_shared< state_node >();
+   node->_impl->_state = *node_itr;
    return node;
 }
 
@@ -1007,6 +1045,11 @@ state_node_ptr database::get_node_at_revision( uint64_t revision, const shared_l
 {
    static const state_node_id null_id;
    return impl->get_node_at_revision( revision, null_id, lock );
+}
+
+state_node_ptr database::get_node_at_revision( uint64_t revision, const state_node_id& child_id, const unique_lock_ptr& lock ) const
+{
+   return impl->get_node_at_revision( revision, child_id, lock );
 }
 
 state_node_ptr database::get_node( const state_node_id& node_id, const shared_lock_ptr& lock ) const
