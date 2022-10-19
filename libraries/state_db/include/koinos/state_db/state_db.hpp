@@ -253,9 +253,14 @@ class database final
       state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
 
       /**
-       * Finalize a node.  The node will no longer be writable.
+       * Finalize a node. The node will no longer be writable.
        */
       void finalize_node( const state_node_id& node_id, const shared_lock_ptr& lock );
+
+      /**
+       * Finalize a node. The node will no longer be writable.
+       */
+      void finalize_node( const state_node_id& node_id, const unique_lock_ptr& lock );
 
       /**
        * Discard the node, it can no longer be used.
@@ -291,6 +296,20 @@ class database final
       state_node_ptr get_head( const shared_lock_ptr& lock ) const;
 
       /**
+       * Get and return the current "head" node.
+       *
+       * Head is determined by longest chain. Oldest
+       * chain wins in a tie of length. Only finalized
+       * nodes are eligible to become head.
+       *
+       * WARNING: The state node returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      state_node_ptr get_head( const unique_lock_ptr& lock ) const;
+
+      /**
        * Get and return a vector of all fork heads.
        *
        * Fork heads are any finalized nodes that do
@@ -304,6 +323,18 @@ class database final
        * All state nodes are guaranteed to a descendant of root.
        */
       state_node_ptr get_root( const shared_lock_ptr& lock ) const;
+
+      /**
+       * Get and return the current "root" node.
+       *
+       * All state nodes are guaranteed to a descendant of root.
+       *
+       * WARNING: The state node returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      state_node_ptr get_root( const unique_lock_ptr& lock ) const;
 
    private:
       std::unique_ptr< detail::database_impl > impl;
