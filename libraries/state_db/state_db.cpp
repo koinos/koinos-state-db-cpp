@@ -118,6 +118,7 @@ class database_impl final
       state_node_ptr get_node_at_revision( uint64_t revision, const state_node_id& child, const shared_lock_ptr& lock ) const;
       state_node_ptr get_node_at_revision( uint64_t revision, const state_node_id& child, const unique_lock_ptr& lock ) const;
       state_node_ptr get_node( const state_node_id& node_id, const shared_lock_ptr& lock ) const;
+      state_node_ptr get_node( const state_node_id& node_id, const unique_lock_ptr& lock ) const;
       state_node_ptr get_node_lockless( const state_node_id& node_id ) const;
       state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
       void finalize_node( const state_node_id& node, const shared_lock_ptr& lock );
@@ -342,6 +343,16 @@ state_node_ptr database_impl::get_node( const state_node_id& node_id, const shar
    auto node = get_node_lockless( node_id );
    if ( node )
       node->_impl->_lock = lock;
+
+   return node;
+}
+
+state_node_ptr database_impl::get_node( const state_node_id& node_id, const unique_lock_ptr& lock ) const
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+
+   auto node = get_node_lockless( node_id );
 
    return node;
 }
@@ -1053,6 +1064,11 @@ state_node_ptr database::get_node_at_revision( uint64_t revision, const state_no
 }
 
 state_node_ptr database::get_node( const state_node_id& node_id, const shared_lock_ptr& lock ) const
+{
+   return impl->get_node( node_id, lock );
+}
+
+state_node_ptr database::get_node( const state_node_id& node_id, const unique_lock_ptr& lock ) const
 {
    return impl->get_node( node_id, lock );
 }

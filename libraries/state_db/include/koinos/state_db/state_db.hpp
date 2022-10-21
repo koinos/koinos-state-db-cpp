@@ -246,6 +246,18 @@ class database final
       state_node_ptr get_node( const state_node_id& node_id, const shared_lock_ptr& lock ) const;
 
       /**
+       * Get the state_node for the given state_node_id.
+       *
+       * Return an empty pointer if no node for the given id exists.
+       *
+       * WARNING: The state node returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      state_node_ptr get_node( const state_node_id& node_id, const unique_lock_ptr& lock ) const;
+
+      /**
        * Create a writable state_node.
        *
        * - If parent_id refers to a writable node, fail.
