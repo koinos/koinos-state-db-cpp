@@ -103,7 +103,7 @@ void state_delta::commit()
    node_stack.pop_back();
 
    // Start the write batch
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->start_write_batch();
+   backend->start_write_batch();
 
    // While there are nodes on the stack, write them to the backend
    while ( node_stack.size() )
@@ -125,13 +125,13 @@ void state_delta::commit()
 
    // Update metadata on the backend
    backend->set_block_header( block_header() );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_revision( _revision );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_id( _id );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_merkle_root( merkle_root() );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->store_metadata();
+   backend->set_revision( _revision );
+   backend->set_id( _id );
+   backend->set_merkle_root( merkle_root() );
+   backend->store_metadata();
 
    // End the write batch making the entire merge atomic
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->end_write_batch();
+   backend->end_write_batch();
 
    // Reset local variables to match new status as root delta
    _removed_objects.clear();
@@ -173,7 +173,7 @@ void state_delta::set_revision( uint64_t revision )
    _revision = revision;
    if ( is_root() )
    {
-      std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_revision( revision );
+      _backend->set_revision( revision );
    }
 }
 

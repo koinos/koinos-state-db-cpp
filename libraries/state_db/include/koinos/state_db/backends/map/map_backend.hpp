@@ -30,8 +30,10 @@ class map_backend final : public abstract_backend {
       virtual iterator find( const key_type& k ) override;
       virtual iterator lower_bound( const key_type& k ) override;
 
-      virtual const protocol::block_header& block_header() const override;
-      virtual void set_block_header( const protocol::block_header& ) override;
+      virtual void start_write_batch() override;
+      virtual void end_write_batch() override;
+
+      virtual void store_metadata() override;
 
    private:
       std::map< key_type, value_type > _map;

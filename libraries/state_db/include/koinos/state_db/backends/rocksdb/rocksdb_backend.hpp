@@ -26,17 +26,8 @@ class rocksdb_backend final : public abstract_backend {
       void close();
       void flush();
 
-      void start_write_batch();
-      void end_write_batch();
-
-      size_type revision() const;
-      void set_revision( size_type rev );
-
-      const crypto::multihash& id() const;
-      void set_id( const crypto::multihash& );
-
-      const crypto::multihash& merkle_root() const;
-      void set_merkle_root( const crypto::multihash& );
+      virtual void start_write_batch() override;
+      virtual void end_write_batch() override;
 
       // Iterators
       virtual iterator begin() override;
@@ -54,10 +45,7 @@ class rocksdb_backend final : public abstract_backend {
       virtual iterator find( const key_type& k ) override;
       virtual iterator lower_bound( const key_type& k ) override;
 
-      virtual const protocol::block_header& block_header() const override;
-      virtual void set_block_header( const protocol::block_header& ) override;
-
-      void store_metadata();
+      virtual void store_metadata() override;
 
    private:
       void load_metadata();
@@ -71,10 +59,6 @@ class rocksdb_backend final : public abstract_backend {
       std::shared_ptr< ::rocksdb::ReadOptions > _ropts;
       mutable std::shared_ptr< object_cache >   _cache;
       size_type                                 _size = 0;
-      size_type                                 _revision = 0;
-      crypto::multihash                         _id;
-      crypto::multihash                         _merkle_root;
-      protocol::block_header                    _header;
 };
 
 } // koinos::state_db::backends::rocksdb
