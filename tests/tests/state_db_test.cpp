@@ -810,7 +810,7 @@ BOOST_AUTO_TEST_CASE( rocksdb_backend_test )
    BOOST_CHECK_THROW( backend.lower_bound( "foo" ), koinos::exception );
    BOOST_CHECK_THROW( backend.flush(), koinos::exception );
    BOOST_CHECK( backend.revision() == 0 );
-   BOOST_CHECK( backend.id() == koinos::crypto::multihash() );
+   BOOST_CHECK( backend.id() == koinos::crypto::multihash::zero( koinos::crypto::multicodec::sha2_256 ) );
 
    std::filesystem::create_directory( temp );
    backend.open( temp );
