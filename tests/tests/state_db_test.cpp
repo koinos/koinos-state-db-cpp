@@ -1473,4 +1473,78 @@ BOOST_AUTO_TEST_CASE( restart_cache )
 
 } KOINOS_CATCH_LOG_AND_RETHROW(info) }
 
+BOOST_AUTO_TEST_CASE( persistence )
+{ try {
+
+   BOOST_TEST_MESSAGE( "Checking persistence when backed by rocksdb" );
+   object_space space;
+   std::string a_key = "a";
+   std::string a_val = "alice";
+
+   auto shared_db_lock = db.get_shared_lock();
+
+   chain::database_key db_key;
+   *db_key.mutable_space() = space;
+   db_key.set_key( a_key );
+   auto key_size = util::converter::as< std::string >( db_key ).size();
+
+   crypto::multihash state_id = crypto::hash( crypto::multicodec::sha2_256, 1 );
+   auto state_1 = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1 );
+   BOOST_CHECK_EQUAL( state_1->put_object( space, a_key, &a_val ), a_val.size() + key_size );
+
+   db.finalize_node( state_id, shared_db_lock );
+
+   auto ptr = state_1->get_object( space, a_key );
+   BOOST_REQUIRE( ptr );
+   BOOST_CHECK_EQUAL( *ptr, a_val );
+
+   state_1.reset();
+   shared_db_lock.reset();
+   db.commit_node( state_id, db.get_unique_lock() );
+
+   db.close( db.get_unique_lock() );
+   db.open( temp, [&]( state_db::state_node_ptr root ){}, &state_db::fifo_comparator, db.get_unique_lock() );
+
+   shared_db_lock = db.get_shared_lock();
+   state_1 = db.get_node( state_id, shared_db_lock );
+   BOOST_REQUIRE( state_1 );
+
+   ptr = state_1->get_object( space, a_key );
+   BOOST_REQUIRE( ptr );
+   BOOST_CHECK_EQUAL( *ptr, a_val );
+
+   state_1.reset();
+   shared_db_lock.reset();
+   db.close( db.get_unique_lock() );
+
+   BOOST_TEST_MESSAGE( "Checking transience when backed by std::map" );
+   db.open( {}, [&]( state_db::state_node_ptr root ){}, &state_db::fifo_comparator, db.get_unique_lock() );
+
+   shared_db_lock = db.get_shared_lock();
+   state_1 = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1 );
+   BOOST_CHECK_EQUAL( state_1->put_object( space, a_key, &a_val ), a_val.size() + key_size );
+
+   db.finalize_node( state_id, shared_db_lock );
+   ptr = state_1->get_object( space, a_key );
+   BOOST_REQUIRE( ptr );
+   BOOST_CHECK_EQUAL( *ptr, a_val );
+
+   state_1.reset();
+   shared_db_lock.reset();
+   db.commit_node( state_id, db.get_unique_lock() );
+
+   db.close( db.get_unique_lock() );
+   db.open( {}, [&]( state_db::state_node_ptr root ){}, &state_db::fifo_comparator, db.get_unique_lock() );
+
+   shared_db_lock = db.get_shared_lock();
+   state_1 = db.get_node( state_id, shared_db_lock );
+   BOOST_REQUIRE( !state_1 );
+
+   ptr = db.get_head( shared_db_lock )->get_object( space, a_key );
+   BOOST_REQUIRE( !ptr );
+
+} KOINOS_CATCH_LOG_AND_RETHROW(info) }
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -2,6 +2,10 @@
 
 namespace koinos::state_db::backends {
 
+abstract_backend::abstract_backend() :
+   _id( crypto::multihash::zero( crypto::multicodec::sha2_256 ) )
+{}
+
 bool abstract_backend::empty() const
 {
    return size() == 0;

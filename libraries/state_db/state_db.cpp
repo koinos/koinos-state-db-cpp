@@ -109,8 +109,8 @@ class database_impl final
       bool verify_shared_lock( const shared_lock_ptr& lock ) const;
       bool verify_unique_lock( const unique_lock_ptr& lock ) const;
 
-      void open( const std::filesystem::path& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock );
-      void open_lockless( const std::filesystem::path& p, genesis_init_function init, state_node_comparator_function comp );
+      void open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock );
+      void open_lockless( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp );
       void close( const unique_lock_ptr& lock );
       void close_lockless();
 
@@ -137,7 +137,7 @@ class database_impl final
 
       bool is_open() const;
 
-      std::filesystem::path                      _path;
+      std::optional< std::filesystem::path >     _path;
       genesis_init_function                      _init_func = nullptr;
       state_node_comparator_function             _comp = nullptr;
 
@@ -214,7 +214,7 @@ void database_impl::reset( const unique_lock_ptr& lock )
    open_lockless( _path, _init_func, _comp );
 }
 
-void database_impl::open( const std::filesystem::path& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock )
+void database_impl::open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock )
 {
    KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
    std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
@@ -222,7 +222,7 @@ void database_impl::open( const std::filesystem::path& p, genesis_init_function 
    open_lockless( p, init, comp );
 }
 
-void database_impl::open_lockless( const std::filesystem::path& p, genesis_init_function init, state_node_comparator_function comp )
+void database_impl::open_lockless( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp )
 {
    auto root = std::make_shared< state_node >();
    root->_impl->_state = std::make_shared< state_delta >( p );
@@ -1032,7 +1032,7 @@ unique_lock_ptr database::get_unique_lock() const
    return impl->get_unique_lock();
 }
 
-void database::open( const std::filesystem::path& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock )
+void database::open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock )
 {
    impl->open( p, init, comp, lock ? lock : get_unique_lock() );
 }

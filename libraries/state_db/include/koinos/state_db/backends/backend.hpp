@@ -14,6 +14,7 @@ class abstract_backend
       using value_type = detail::value_type;
       using size_type  = detail::size_type;
 
+      abstract_backend();
       virtual ~abstract_backend() {};
 
       virtual iterator begin() = 0;

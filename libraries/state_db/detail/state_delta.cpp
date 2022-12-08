@@ -7,14 +7,22 @@ namespace koinos::state_db::detail {
 using backend_type = state_delta::backend_type;
 using value_type   = state_delta::value_type;
 
-state_delta::state_delta( const std::filesystem::path& p )
+state_delta::state_delta( const std::optional< std::filesystem::path >& p )
 {
-   auto backend = std::make_shared< backends::rocksdb::rocksdb_backend >();
-   backend->open( p );
-   _revision = backend->revision();
-   _id = backend->id();
-   _merkle_root =  backend->merkle_root();
-   _backend = backend;
+   if ( p )
+   {
+      auto backend = std::make_shared< backends::rocksdb::rocksdb_backend >();
+      backend->open( *p );
+      _backend = backend;
+   }
+   else
+   {
+      _backend = std::make_shared< backends::map::map_backend >();
+   }
+
+   _revision = _backend->revision();
+   _id = _backend->id();
+   _merkle_root =  _backend->merkle_root();
 }
 
 void state_delta::put( const key_type& k, const value_type& v )

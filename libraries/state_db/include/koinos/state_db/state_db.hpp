@@ -210,7 +210,7 @@ class database final
       /**
        * Open the database.
        */
-      void open( const std::filesystem::path& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock );
+      void open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock );
 
       /**
        * Close the database.

@@ -40,7 +40,7 @@ namespace koinos::state_db::detail {
 
       public:
          state_delta() = default;
-         state_delta( const std::filesystem::path& p );
+         state_delta( const std::optional< std::filesystem::path >& p );
          ~state_delta() = default;
 
          void put( const key_type& k, const value_type& v );
