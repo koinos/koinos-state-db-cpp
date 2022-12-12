@@ -121,6 +121,7 @@ class database_impl final
       state_node_ptr get_node( const state_node_id& node_id, const unique_lock_ptr& lock ) const;
       state_node_ptr get_node_lockless( const state_node_id& node_id ) const;
       state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
+      void update_node( const state_node_id& old_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
       void finalize_node( const state_node_id& node, const shared_lock_ptr& lock );
       void finalize_node( const state_node_id& node, const unique_lock_ptr& lock );
       void discard_node( const state_node_id& node, const std::unordered_set< state_node_id >& whitelist, const shared_lock_ptr& lock );
@@ -415,6 +416,25 @@ state_node_ptr database_impl::create_writable_node( const state_node_id& parent_
    }
 
    return state_node_ptr();
+}
+
+void database_impl::update_node( const state_node_id& old_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock )
+{
+   KOINOS_ASSERT( verify_shared_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   KOINOS_ASSERT( is_open(), database_not_open, "database is not open" );
+   auto node_itr = _index.find( old_id );
+   KOINOS_ASSERT( node_itr != _index.end(), illegal_argument, "node ${n} not found.", ("n", old_id) );
+   KOINOS_ASSERT( !(*node_itr)->is_finalized(), illegal_argument, "cannot update id of finalized node" );
+
+   _index.modify(
+      node_itr,
+      [&]( state_delta_ptr& n )
+      {
+         n->set_id( new_id );
+         n->set_block_header( header );
+      }
+   );
 }
 
 void database_impl::finalize_node( const state_node_id& node_id, const shared_lock_ptr& lock )
@@ -1076,6 +1096,11 @@ state_node_ptr database::get_node( const state_node_id& node_id, const unique_lo
 state_node_ptr database::create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock )
 {
    return impl->create_writable_node( parent_id, new_id, header, lock );
+}
+
+void database::update_node( const state_node_id& old_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock )
+{
+   impl->update_node( old_id, new_id, header, lock );
 }
 
 void database::finalize_node( const state_node_id& node_id, const shared_lock_ptr& lock )

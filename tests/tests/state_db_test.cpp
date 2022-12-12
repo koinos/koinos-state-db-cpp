@@ -1547,4 +1547,30 @@ BOOST_AUTO_TEST_CASE( persistence )
 
 } KOINOS_CATCH_LOG_AND_RETHROW(info) }
 
+BOOST_AUTO_TEST_CASE( update_id )
+{ try {
+
+   auto shared_db_lock = db.get_shared_lock();
+
+   crypto::multihash state_id_1 = crypto::hash( crypto::multicodec::sha2_256, 1 );
+   auto state_1 = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_id_1, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1 );
+
+   crypto::multihash state_id_2 = crypto::hash( crypto::multicodec::sha2_256, 2 );
+   db.update_node( state_id_1, state_id_2, protocol::block_header(), shared_db_lock );
+   BOOST_CHECK( state_1->id() == state_id_2 );
+
+   auto state_2 = db.get_node( state_id_2, shared_db_lock );
+   BOOST_REQUIRE( state_2 );
+   BOOST_CHECK( state_1->id() == state_2->id() );
+
+   state_1 = db.get_node( state_id_1, shared_db_lock );
+   BOOST_REQUIRE( !state_1 );
+
+   crypto::multihash state_id_3 = crypto::hash( crypto::multicodec::sha2_256, 2 );
+   db.finalize_node( state_id_2, shared_db_lock );
+   BOOST_REQUIRE_THROW( db.update_node( state_id_2, state_id_3, protocol::block_header(), shared_db_lock ), state_db::illegal_argument );
+
+} KOINOS_CATCH_LOG_AND_RETHROW(info) }
+
 BOOST_AUTO_TEST_SUITE_END()

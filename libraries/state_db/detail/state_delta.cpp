@@ -247,6 +247,11 @@ const protocol::block_header& state_delta::block_header() const
    return _backend->block_header();
 }
 
+void state_delta::set_block_header( const protocol::block_header& header )
+{
+   _backend->set_block_header( header );
+}
+
 std::shared_ptr< state_delta > state_delta::make_child( const state_node_id& id, const protocol::block_header& header )
 {
    auto child = std::make_shared< state_delta >();
@@ -262,6 +267,12 @@ std::shared_ptr< state_delta > state_delta::make_child( const state_node_id& id,
 const std::shared_ptr< backend_type > state_delta::backend() const
 {
    return _backend;
+}
+
+void state_delta::set_id( const state_node_id& id )
+{
+   _id = id;
+   _backend->set_id( id );
 }
 
 const state_node_id& state_delta::id() const

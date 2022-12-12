@@ -69,9 +69,13 @@ namespace koinos::state_db::detail {
          crypto::multihash merkle_root() const;
 
          const state_node_id& id() const;
+         void set_id( const state_node_id& id );
+
          const state_node_id& parent_id() const;
          std::shared_ptr< state_delta > parent() const;
+
          const protocol::block_header& block_header() const;
+         void set_block_header( const protocol::block_header& header );
 
          std::shared_ptr< state_delta > make_child( const state_node_id& id = state_node_id(), const protocol::block_header& header = protocol::block_header() );
 
