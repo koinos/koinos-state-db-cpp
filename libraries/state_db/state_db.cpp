@@ -805,7 +805,7 @@ std::vector< state_node_ptr > database_impl::get_all_nodes( const shared_lock_pt
    std::vector< state_node_ptr > nodes;
    nodes.reserve( _index.size() );
 
-   for( const auto& delta : _index )
+   for ( const auto& delta : _index )
    {
       auto node = std::make_shared< state_node >();
       node->_impl->_state = delta;
@@ -824,7 +824,7 @@ std::vector< state_node_ptr > database_impl::get_all_nodes( const unique_lock_pt
    std::vector< state_node_ptr > nodes;
    nodes.reserve( _index.size() );
 
-   for( const auto& delta : _index )
+   for ( const auto& delta : _index )
    {
       auto node = std::make_shared< state_node >();
       node->_impl->_state = delta;
