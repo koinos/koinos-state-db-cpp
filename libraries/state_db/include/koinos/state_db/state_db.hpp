@@ -210,7 +210,7 @@ class database final
       /**
        * Open the database.
        */
-      void open( const std::filesystem::path& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock );
+      void open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock );
 
       /**
        * Close the database.
@@ -237,6 +237,7 @@ class database final
        * unique lock.
        */
       state_node_ptr get_node_at_revision( uint64_t revision, const state_node_id& child_id, const unique_lock_ptr& lock ) const;
+      state_node_ptr get_node_at_revision( uint64_t revision, const unique_lock_ptr& lock ) const;
 
       /**
        * Get the state_node for the given state_node_id.
@@ -275,6 +276,47 @@ class database final
       state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
 
       /**
+       * Create a writable state_node.
+       *
+       * - If parent_id refers to a writable node, fail.
+       * - Otherwise, return a new writable node.
+       * - Writing to the returned node will not modify the parent node.
+       *
+       * If the parent is subsequently discarded, database preserves
+       * as much of the parent's state storage as necessary to continue
+       * to serve queries on any (non-discarded) children.  A discarded
+       * parent node's state may internally be merged into a child's
+       * state storage area, allowing the parent's state storage area
+       * to be freed.  This merge may occur immediately, or it may be
+       * deferred or parallelized.
+       *
+       * WARNING: The state node returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock );
+
+      /**
+       * Clone a node with a new id and block header.
+       *
+       * Cannot clone a finalized node.
+       */
+      state_node_ptr clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
+
+      /**
+       * Clone a node with a new id and block header.
+       *
+       * Cannot clone a finalized node.
+       *
+       * WARNING: The state node returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      state_node_ptr clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock );
+
+      /**
        * Finalize a node. The node will no longer be writable.
        */
       void finalize_node( const state_node_id& node_id, const shared_lock_ptr& lock );
@@ -294,6 +336,17 @@ class database final
        * current head node to be delted.
        */
       void discard_node( const state_node_id& node_id, const shared_lock_ptr& lock );
+
+      /**
+       * Discard the node, it can no longer be used.
+       *
+       * If the node has any children, they too will be deleted because
+       * there will no longer exist a path from root to those nodes.
+       *
+       * This will fail if the node you are deleting would cause the
+       * current head node to be delted.
+       */
+      void discard_node( const state_node_id& node_id, const unique_lock_ptr& lock );
 
       /**
        * Squash the node in to the root state, committing it.
@@ -335,9 +388,22 @@ class database final
        * Get and return a vector of all fork heads.
        *
        * Fork heads are any finalized nodes that do
-       * not have children.
+       * not have finalized children.
        */
       std::vector< state_node_ptr > get_fork_heads( const shared_lock_ptr& lock ) const;
+
+      /**
+       * Get and return a vector of all fork heads.
+       *
+       * Fork heads are any finalized nodes that do
+       * not have finalized children.
+       *
+       * WARNING: The state nodes returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      std::vector< state_node_ptr > get_fork_heads( const unique_lock_ptr& lock ) const;
 
       /**
        * Get and return the current "root" node.

@@ -57,14 +57,15 @@ iterator map_backend::lower_bound( const key_type& k )
    return iterator( std::make_unique< map_iterator >( std::make_unique< map_iterator::iterator_impl >( _map.lower_bound( k ) ), _map ) );
 }
 
-const protocol::block_header& map_backend::block_header() const
-{
-   return _header;
-}
+void map_backend::start_write_batch() {}
 
-void map_backend::set_block_header( const protocol::block_header& header )
+void map_backend::end_write_batch() {}
+
+void map_backend::store_metadata() {}
+
+std::shared_ptr< abstract_backend > map_backend::clone() const
 {
-   _header = header;
+   return std::make_shared< map_backend >( *this );
 }
 
 } // koinos::state_db::backends::map

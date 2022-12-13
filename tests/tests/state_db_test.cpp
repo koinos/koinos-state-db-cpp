@@ -809,10 +809,8 @@ BOOST_AUTO_TEST_CASE( rocksdb_backend_test )
    BOOST_CHECK_THROW( backend.find( "foo" ), koinos::exception );
    BOOST_CHECK_THROW( backend.lower_bound( "foo" ), koinos::exception );
    BOOST_CHECK_THROW( backend.flush(), koinos::exception );
-   BOOST_CHECK_THROW( backend.revision(), koinos::exception );
-   BOOST_CHECK_THROW( backend.set_revision( 1 ), koinos::exception );
-   BOOST_CHECK_THROW( backend.id(), koinos::exception );
-   BOOST_CHECK_THROW( backend.set_id( koinos::crypto::multihash::zero( koinos::crypto::multicodec::sha2_256 ) ), koinos::exception );
+   BOOST_CHECK( backend.revision() == 0 );
+   BOOST_CHECK( backend.id() == koinos::crypto::multihash::zero( koinos::crypto::multicodec::sha2_256 ) );
 
    std::filesystem::create_directory( temp );
    backend.open( temp );
@@ -1473,6 +1471,136 @@ BOOST_AUTO_TEST_CASE( restart_cache )
       BOOST_CHECK_EQUAL( key, a_key );
    }
 
+} KOINOS_CATCH_LOG_AND_RETHROW(info) }
+
+BOOST_AUTO_TEST_CASE( persistence )
+{ try {
+
+   BOOST_TEST_MESSAGE( "Checking persistence when backed by rocksdb" );
+   object_space space;
+   std::string a_key = "a";
+   std::string a_val = "alice";
+
+   auto shared_db_lock = db.get_shared_lock();
+
+   chain::database_key db_key;
+   *db_key.mutable_space() = space;
+   db_key.set_key( a_key );
+   auto key_size = util::converter::as< std::string >( db_key ).size();
+
+   crypto::multihash state_id = crypto::hash( crypto::multicodec::sha2_256, 1 );
+   auto state_1 = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1 );
+   BOOST_CHECK_EQUAL( state_1->put_object( space, a_key, &a_val ), a_val.size() + key_size );
+
+   db.finalize_node( state_id, shared_db_lock );
+
+   auto ptr = state_1->get_object( space, a_key );
+   BOOST_REQUIRE( ptr );
+   BOOST_CHECK_EQUAL( *ptr, a_val );
+
+   state_1.reset();
+   shared_db_lock.reset();
+   db.commit_node( state_id, db.get_unique_lock() );
+
+   db.close( db.get_unique_lock() );
+   db.open( temp, [&]( state_db::state_node_ptr root ){}, &state_db::fifo_comparator, db.get_unique_lock() );
+
+   shared_db_lock = db.get_shared_lock();
+   state_1 = db.get_node( state_id, shared_db_lock );
+   BOOST_REQUIRE( state_1 );
+
+   ptr = state_1->get_object( space, a_key );
+   BOOST_REQUIRE( ptr );
+   BOOST_CHECK_EQUAL( *ptr, a_val );
+
+   state_1.reset();
+   shared_db_lock.reset();
+   db.close( db.get_unique_lock() );
+
+   BOOST_TEST_MESSAGE( "Checking transience when backed by std::map" );
+   db.open( {}, [&]( state_db::state_node_ptr root ){}, &state_db::fifo_comparator, db.get_unique_lock() );
+
+   shared_db_lock = db.get_shared_lock();
+   state_1 = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1 );
+   BOOST_CHECK_EQUAL( state_1->put_object( space, a_key, &a_val ), a_val.size() + key_size );
+
+   db.finalize_node( state_id, shared_db_lock );
+   ptr = state_1->get_object( space, a_key );
+   BOOST_REQUIRE( ptr );
+   BOOST_CHECK_EQUAL( *ptr, a_val );
+
+   state_1.reset();
+   shared_db_lock.reset();
+   db.commit_node( state_id, db.get_unique_lock() );
+
+   db.close( db.get_unique_lock() );
+   db.open( {}, [&]( state_db::state_node_ptr root ){}, &state_db::fifo_comparator, db.get_unique_lock() );
+
+   shared_db_lock = db.get_shared_lock();
+   state_1 = db.get_node( state_id, shared_db_lock );
+   BOOST_REQUIRE( !state_1 );
+
+   ptr = db.get_head( shared_db_lock )->get_object( space, a_key );
+   BOOST_REQUIRE( !ptr );
+
+} KOINOS_CATCH_LOG_AND_RETHROW(info) }
+
+BOOST_AUTO_TEST_CASE( clone_node )
+{ try {
+   BOOST_TEST_MESSAGE( "Check clone of un-finalized node" );
+
+   object_space space;
+   std::string a_key = "a";
+   std::string a_val = "alice";
+   std::string b_key = "bob";
+   std::string b_val = "bob";
+   std::string c_key = "charlie";
+   std::string c_val = "charlie";
+   std::string d_key = "dave";
+   std::string d_val = "dave";
+
+   auto shared_db_lock = db.get_shared_lock();
+
+   chain::database_key db_key;
+   *db_key.mutable_space() = space;
+   db_key.set_key( a_key );
+
+   crypto::multihash state_1a_id = crypto::hash( crypto::multicodec::sha2_256, 0x1a );
+   auto state_1a = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_1a_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1a );
+   state_1a->put_object( space, a_key, &a_val );
+   state_1a->put_object( space, b_key, &b_val );
+   db.finalize_node( state_1a_id, shared_db_lock );
+
+   crypto::multihash state_2a_id = crypto::hash( crypto::multicodec::sha2_256, 0x2a );
+   auto state_2a = db.create_writable_node( state_1a_id, state_2a_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_2a );
+   state_2a->put_object( space, c_key, &c_val );
+   state_2a->remove_object( space, a_key );
+
+   crypto::multihash state_2b_id = crypto::hash( crypto::multicodec::sha2_256, 0x2b );
+   auto state_2b = db.clone_node( state_2a_id, state_2b_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_2b );
+   BOOST_CHECK( !state_2b->is_finalized() );
+   BOOST_CHECK( !state_2b->get_object( space, a_key ) );
+   BOOST_REQUIRE( state_2b->get_object( space, b_key ) );
+   BOOST_CHECK_EQUAL( *state_2b->get_object( space, b_key ), b_val );
+   BOOST_REQUIRE( state_2b->get_object( space, c_key ) );
+   BOOST_CHECK_EQUAL( *state_2b->get_object( space, c_key ), c_val );
+
+   state_2b->remove_object( space, b_key );
+   state_2b->put_object( space, d_key, &d_val );
+
+   BOOST_REQUIRE( state_2a->get_object( space, b_key ) );
+   BOOST_CHECK_EQUAL( *state_2a->get_object( space, b_key ), b_val );
+   BOOST_CHECK( !state_2a->get_object( space, d_key ) );
+
+   BOOST_TEST_MESSAGE( "Checking clone of a finalized node" );
+
+   crypto::multihash state_1b_id = crypto::hash( crypto::multicodec::sha2_256, 0x1b );
+   BOOST_REQUIRE_THROW( db.clone_node( state_1a_id, state_1b_id, protocol::block_header(), shared_db_lock ), illegal_argument );
 } KOINOS_CATCH_LOG_AND_RETHROW(info) }
 
 BOOST_AUTO_TEST_SUITE_END()

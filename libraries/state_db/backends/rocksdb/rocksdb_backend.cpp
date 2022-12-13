@@ -237,44 +237,6 @@ void rocksdb_backend::end_write_batch()
    }
 }
 
-rocksdb_backend::size_type rocksdb_backend::revision() const
-{
-   KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );
-
-   return _revision;
-}
-
-void rocksdb_backend::set_revision( size_type rev )
-{
-   KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );
-
-   _revision = rev;
-}
-
-const crypto::multihash& rocksdb_backend::id() const
-{
-   KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );
-
-   return _id;
-}
-
-void rocksdb_backend::set_id( const crypto::multihash& id )
-{
-   KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );
-
-   _id = id;
-}
-
-const crypto::multihash& rocksdb_backend::merkle_root() const
-{
-   return _merkle_root;
-}
-
-void rocksdb_backend::set_merkle_root( const crypto::multihash& merkle_root )
-{
-   _merkle_root = merkle_root;
-}
-
 iterator rocksdb_backend::begin()
 {
    KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );
@@ -439,16 +401,6 @@ iterator rocksdb_backend::lower_bound( const key_type& k )
    return iterator( std::unique_ptr< abstract_iterator >( std::move( itr ) ) );
 }
 
-const protocol::block_header& rocksdb_backend::block_header() const
-{
-   return _header;
-}
-
-void rocksdb_backend::set_block_header( const protocol::block_header& header )
-{
-   _header = header;
-}
-
 void rocksdb_backend::load_metadata()
 {
    KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );
@@ -472,7 +424,7 @@ void rocksdb_backend::load_metadata()
 
    KOINOS_ASSERT( status.ok(), rocksdb_read_exception, "unable to read from rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
 
-   _revision = util::converter::to< size_type >( value );
+   set_revision( util::converter::to< size_type >( value ) );
 
    status = _db->Get(
       *_ropts,
@@ -482,7 +434,7 @@ void rocksdb_backend::load_metadata()
 
    KOINOS_ASSERT( status.ok(), rocksdb_read_exception, "unable to read from rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
 
-   _id = util::converter::to< crypto::multihash >( value );
+   set_id( util::converter::to< crypto::multihash >( value ) );
 
    status = _db->Get(
       *_ropts,
@@ -492,7 +444,7 @@ void rocksdb_backend::load_metadata()
 
    KOINOS_ASSERT( status.ok(), rocksdb_read_exception, "unable to read from rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
 
-   _merkle_root = util::converter::to< crypto::multihash >( value );
+   set_merkle_root( util::converter::to< crypto::multihash >( value ) );
 
    status = _db->Get(
       *_ropts,
@@ -502,7 +454,7 @@ void rocksdb_backend::load_metadata()
 
    KOINOS_ASSERT( status.ok(), rocksdb_read_exception, "unable to read from rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
 
-   _header = util::converter::to< protocol::block_header >( value );
+   set_block_header( util::converter::to< protocol::block_header >( value ) );
 }
 
 void rocksdb_backend::store_metadata()
@@ -522,7 +474,7 @@ void rocksdb_backend::store_metadata()
       _wopts,
       &*_handles[ constants::metadata_column_index ],
       ::rocksdb::Slice( constants::revision_key ),
-      ::rocksdb::Slice( util::converter::as< std::string >( _revision ) )
+      ::rocksdb::Slice( util::converter::as< std::string >( revision() ) )
    );
 
    KOINOS_ASSERT( status.ok(), rocksdb_write_exception, "unable to write to rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
@@ -531,7 +483,7 @@ void rocksdb_backend::store_metadata()
       _wopts,
       &*_handles[ constants::metadata_column_index ],
       ::rocksdb::Slice( constants::id_key ),
-      ::rocksdb::Slice( util::converter::as< std::string >( _id ) )
+      ::rocksdb::Slice( util::converter::as< std::string >( id() ) )
    );
 
    KOINOS_ASSERT( status.ok(), rocksdb_write_exception, "unable to write to rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
@@ -540,7 +492,7 @@ void rocksdb_backend::store_metadata()
       _wopts,
       &*_handles[ constants::metadata_column_index ],
       ::rocksdb::Slice( constants::merkle_root_key ),
-      ::rocksdb::Slice( util::converter::as< std::string >( _merkle_root ) )
+      ::rocksdb::Slice( util::converter::as< std::string >( merkle_root() ) )
    );
 
    KOINOS_ASSERT( status.ok(), rocksdb_write_exception, "unable to write to rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
@@ -549,10 +501,15 @@ void rocksdb_backend::store_metadata()
       _wopts,
       &*_handles[ constants::metadata_column_index ],
       ::rocksdb::Slice( constants::block_header_key ),
-      ::rocksdb::Slice( util::converter::as< std::string >( _header ) )
+      ::rocksdb::Slice( util::converter::as< std::string >( block_header() ) )
    );
 
    KOINOS_ASSERT( status.ok(), rocksdb_write_exception, "unable to write to rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
+}
+
+std::shared_ptr< abstract_backend > rocksdb_backend::clone() const
+{
+   KOINOS_THROW( internal_exception, "rocksdb_backend, 'clone' not implemented" );
 }
 
 } // koinos::state_db::backends::rocksdb

@@ -7,14 +7,22 @@ namespace koinos::state_db::detail {
 using backend_type = state_delta::backend_type;
 using value_type   = state_delta::value_type;
 
-state_delta::state_delta( const std::filesystem::path& p )
+state_delta::state_delta( const std::optional< std::filesystem::path >& p )
 {
-   auto backend = std::make_shared< backends::rocksdb::rocksdb_backend >();
-   backend->open( p );
-   _revision = backend->revision();
-   _id = backend->id();
-   _merkle_root =  backend->merkle_root();
-   _backend = backend;
+   if ( p )
+   {
+      auto backend = std::make_shared< backends::rocksdb::rocksdb_backend >();
+      backend->open( *p );
+      _backend = backend;
+   }
+   else
+   {
+      _backend = std::make_shared< backends::map::map_backend >();
+   }
+
+   _revision = _backend->revision();
+   _id = _backend->id();
+   _merkle_root =  _backend->merkle_root();
 }
 
 void state_delta::put( const key_type& k, const value_type& v )
@@ -103,7 +111,7 @@ void state_delta::commit()
    node_stack.pop_back();
 
    // Start the write batch
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->start_write_batch();
+   backend->start_write_batch();
 
    // While there are nodes on the stack, write them to the backend
    while ( node_stack.size() )
@@ -125,13 +133,13 @@ void state_delta::commit()
 
    // Update metadata on the backend
    backend->set_block_header( block_header() );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_revision( _revision );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_id( _id );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->set_merkle_root( merkle_root() );
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->store_metadata();
+   backend->set_revision( _revision );
+   backend->set_id( _id );
+   backend->set_merkle_root( merkle_root() );
+   backend->store_metadata();
 
    // End the write batch making the entire merge atomic
-   std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( backend )->end_write_batch();
+   backend->end_write_batch();
 
    // Reset local variables to match new status as root delta
    _removed_objects.clear();
@@ -173,7 +181,7 @@ void state_delta::set_revision( uint64_t revision )
    _revision = revision;
    if ( is_root() )
    {
-      std::static_pointer_cast< backends::rocksdb::rocksdb_backend >( _backend )->set_revision( revision );
+      _backend->set_revision( revision );
    }
 }
 
@@ -249,6 +257,31 @@ std::shared_ptr< state_delta > state_delta::make_child( const state_node_id& id,
    child->_backend->set_block_header( header );
 
    return child;
+}
+
+std::shared_ptr< state_delta > state_delta::clone( const state_node_id& id, const protocol::block_header& header )
+{
+   auto new_node = std::make_shared< state_delta >();
+   new_node->_parent = _parent;
+   new_node->_backend = _backend->clone();
+   new_node->_removed_objects = _removed_objects;
+
+   new_node->_id = id;
+   new_node->_revision = _revision;
+   new_node->_merkle_root = _merkle_root;
+
+   new_node->_finalized = _finalized;
+
+   new_node->_backend->set_id( id );
+   new_node->_backend->set_revision( _revision );
+   new_node->_backend->set_block_header( header );
+
+   if ( _merkle_root )
+   {
+      new_node->_backend->set_merkle_root( *_merkle_root );
+   }
+
+   return new_node;
 }
 
 const std::shared_ptr< backend_type > state_delta::backend() const
