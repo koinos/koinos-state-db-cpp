@@ -342,9 +342,17 @@ class database final
        * Get and return a vector of all fork heads.
        *
        * Fork heads are any finalized nodes that do
-       * not have children.
+       * not have finalized children.
        */
       std::vector< state_node_ptr > get_fork_heads( const shared_lock_ptr& lock ) const;
+
+      /**
+       * Get and return a vector of all fork heads.
+       *
+       * Fork heads are any finalized nodes that do
+       * not have finalized children.
+       */
+      std::vector< state_node_ptr > get_fork_heads( const unique_lock_ptr& lock ) const;
 
       /**
        * Get and return the current "root" node.

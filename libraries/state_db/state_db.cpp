@@ -132,6 +132,7 @@ class database_impl final
       state_node_ptr get_head( const unique_lock_ptr& lock ) const;
       state_node_ptr get_head_lockless() const;
       std::vector< state_node_ptr > get_fork_heads( const shared_lock_ptr& lock ) const;
+      std::vector< state_node_ptr > get_fork_heads( const unique_lock_ptr& lock ) const;
       state_node_ptr get_root( const shared_lock_ptr& lock ) const;
       state_node_ptr get_root( const unique_lock_ptr& lock ) const;
       state_node_ptr get_root_lockless() const;
@@ -700,6 +701,25 @@ std::vector< state_node_ptr > database_impl::get_fork_heads( const shared_lock_p
    return fork_heads;
 }
 
+std::vector< state_node_ptr > database_impl::get_fork_heads( const unique_lock_ptr& lock ) const
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   std::shared_lock< std::shared_mutex > fork_heads_lock( _fork_heads_mutex );
+   KOINOS_ASSERT( is_open(), database_not_open, "database is not open" );
+   std::vector< state_node_ptr > fork_heads;
+   fork_heads.reserve( _fork_heads.size() );
+
+   for( auto& head : _fork_heads )
+   {
+      auto fork_head = std::make_shared< state_node >();
+      fork_head->_impl->_state = head.second;
+      fork_heads.push_back( fork_head );
+   }
+
+   return fork_heads;
+}
+
 state_node_ptr database_impl::get_root( const shared_lock_ptr& lock ) const
 {
    KOINOS_ASSERT( verify_shared_lock( lock ), illegal_argument, "database is not properly locked" );
@@ -1138,6 +1158,11 @@ state_node_ptr database::get_head( const unique_lock_ptr& lock ) const
 }
 
 std::vector< state_node_ptr > database::get_fork_heads( const shared_lock_ptr& lock ) const
+{
+   return impl->get_fork_heads( lock );
+}
+
+std::vector< state_node_ptr > database::get_fork_heads( const unique_lock_ptr& lock ) const
 {
    return impl->get_fork_heads( lock );
 }
