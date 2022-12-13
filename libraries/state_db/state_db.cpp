@@ -127,6 +127,7 @@ class database_impl final
       void finalize_node( const state_node_id& node, const shared_lock_ptr& lock );
       void finalize_node( const state_node_id& node, const unique_lock_ptr& lock );
       void discard_node( const state_node_id& node, const std::unordered_set< state_node_id >& whitelist, const shared_lock_ptr& lock );
+      void discard_node( const state_node_id& node, const std::unordered_set< state_node_id >& whitelist, const unique_lock_ptr& lock );
       void discard_node_lockless( const state_node_id& node, const std::unordered_set< state_node_id >& whitelist );
       void commit_node( const state_node_id& node, const unique_lock_ptr& lock );
 
@@ -634,6 +635,14 @@ void database_impl::finalize_node( const state_node_id& node_id, const unique_lo
 void database_impl::discard_node( const state_node_id& node_id, const std::unordered_set< state_node_id >& whitelist, const shared_lock_ptr& lock )
 {
    KOINOS_ASSERT( verify_shared_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   std::unique_lock< std::shared_mutex > fork_heads_lock( _fork_heads_mutex );
+   discard_node_lockless( node_id, whitelist );
+}
+
+void database_impl::discard_node( const state_node_id& node_id, const std::unordered_set< state_node_id >& whitelist, const unique_lock_ptr& lock )
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
    std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
    std::unique_lock< std::shared_mutex > fork_heads_lock( _fork_heads_mutex );
    discard_node_lockless( node_id, whitelist );
@@ -1219,6 +1228,12 @@ void database::finalize_node( const state_node_id& node_id, const unique_lock_pt
 }
 
 void database::discard_node( const state_node_id& node_id, const shared_lock_ptr& lock )
+{
+   static const std::unordered_set< state_node_id > whitelist;
+   impl->discard_node( node_id, whitelist, lock );
+}
+
+void database::discard_node( const state_node_id& node_id, const unique_lock_ptr& lock )
 {
    static const std::unordered_set< state_node_id > whitelist;
    impl->discard_node( node_id, whitelist, lock );
