@@ -48,7 +48,7 @@ struct state_db_fixture
       temp = std::filesystem::temp_directory_path() / util::random_alphanumeric( 8 );
       std::filesystem::create_directory( temp );
 
-      db.open( temp, [&]( state_db::state_node_ptr root ){}, &state_db::fifo_comparator, db.get_unique_lock() );
+      db.open( temp, [&]( state_db::state_node_ptr root ){}, fork_resolution_algorithm::fifo, db.get_unique_lock() );
    }
 
    ~state_db_fixture()

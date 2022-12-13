@@ -109,6 +109,7 @@ class database_impl final
       bool verify_shared_lock( const shared_lock_ptr& lock ) const;
       bool verify_unique_lock( const unique_lock_ptr& lock ) const;
 
+      void open( const std::optional< std::filesystem::path >& p, genesis_init_function init, fork_resolution_algorithm algo, const unique_lock_ptr& lock );
       void open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock );
       void open_lockless( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp );
       void close( const unique_lock_ptr& lock );
@@ -217,6 +218,29 @@ void database_impl::reset( const unique_lock_ptr& lock )
    _root->clear();
    close_lockless();
    open_lockless( _path, _init_func, _comp );
+}
+
+void database_impl::open( const std::optional< std::filesystem::path >& p, genesis_init_function init, fork_resolution_algorithm algo, const unique_lock_ptr& lock )
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
+
+   state_node_comparator_function comp;
+
+   switch ( algo )
+   {
+      case fork_resolution_algorithm::block_time:
+         comp = &block_time_comparator;
+         break;
+      case fork_resolution_algorithm::pob:
+         comp = &pob_comparator;
+         break;
+      case fork_resolution_algorithm::fifo:
+         [[fallthrough]];
+      default:
+         comp = &fifo_comparator;
+   }
+
+   open( p, init, comp, lock );
 }
 
 void database_impl::open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock )
@@ -1148,6 +1172,11 @@ shared_lock_ptr database::get_shared_lock() const
 unique_lock_ptr database::get_unique_lock() const
 {
    return impl->get_unique_lock();
+}
+
+void database::open( const std::optional< std::filesystem::path >& p, genesis_init_function init, fork_resolution_algorithm algo, const unique_lock_ptr& lock )
+{
+   impl->open( p, init, algo, lock ? lock : get_unique_lock() );
 }
 
 void database::open( const std::optional< std::filesystem::path >& p, genesis_init_function init, state_node_comparator_function comp, const unique_lock_ptr& lock )
