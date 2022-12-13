@@ -130,7 +130,7 @@ class merge_iterator :
       {
          bool dirty = false;
 
-         for( int i = _delta_deque.size() - 1; itr->revision < _delta_deque[i]->revision() && !dirty; --i )
+         for ( auto i = _delta_deque.size() - 1; itr->revision < _delta_deque[i]->revision() && !dirty; --i )
          {
             dirty = _delta_deque[i]->is_modified( itr->itr.key() );
          }

@@ -29,6 +29,13 @@ class anonymous_state_node;
 using abstract_state_node_ptr = std::shared_ptr< abstract_state_node >;
 using anonymous_state_node_ptr = std::shared_ptr< anonymous_state_node >;
 
+enum class fork_resolution_algorithm
+{
+   fifo,
+   block_time,
+   pob
+};
+
 /**
  * Allows querying the database at a particular checkpoint.
  */
@@ -206,6 +213,11 @@ class database final
       shared_lock_ptr get_shared_lock() const;
 
       unique_lock_ptr get_unique_lock() const;
+
+      /**
+       * Open the database.
+       */
+      void open( const std::optional< std::filesystem::path >& p, genesis_init_function init, fork_resolution_algorithm algo, const unique_lock_ptr& lock );
 
       /**
        * Open the database.
