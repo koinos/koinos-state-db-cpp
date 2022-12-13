@@ -1603,4 +1603,60 @@ BOOST_AUTO_TEST_CASE( clone_node )
    BOOST_REQUIRE_THROW( db.clone_node( state_1a_id, state_1b_id, protocol::block_header(), shared_db_lock ), illegal_argument );
 } KOINOS_CATCH_LOG_AND_RETHROW(info) }
 
+BOOST_AUTO_TEST_CASE( get_all_nodes )
+{ try {
+   BOOST_TEST_MESSAGE( "Create state nodes" );
+
+   auto shared_db_lock = db.get_shared_lock();
+   auto root_id = db.get_root( shared_db_lock )->id();
+
+   crypto::multihash state_1a_id = crypto::hash( crypto::multicodec::sha2_256, 0x1a );
+   auto state_1a = db.create_writable_node( root_id, state_1a_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1a );
+   db.finalize_node( state_1a_id, shared_db_lock );
+
+   crypto::multihash state_1b_id = crypto::hash( crypto::multicodec::sha2_256, 0x1b );
+   auto state_1b = db.create_writable_node( root_id, state_1b_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1b );
+
+   crypto::multihash state_2a_id = crypto::hash( crypto::multicodec::sha2_256, 0x2a );
+   auto state_2a = db.create_writable_node( state_1a_id, state_2a_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_2a );
+
+   crypto::multihash state_2b_id = crypto::hash( crypto::multicodec::sha2_256, 0x2b );
+   auto state_2b = db.create_writable_node( state_1a_id, state_2b_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_2b );
+
+   BOOST_TEST_MESSAGE( "Check all state nodes" );
+
+   auto nodes = db.get_all_nodes( shared_db_lock );
+   BOOST_REQUIRE_EQUAL( nodes.size(), 5 );
+   BOOST_CHECK( nodes[0]->id() == root_id );
+   BOOST_CHECK( nodes[1]->id() == state_1b_id );
+   BOOST_CHECK( nodes[2]->id() == state_2a_id );
+   BOOST_CHECK( nodes[3]->id() == state_1a_id );
+   BOOST_CHECK( nodes[4]->id() == state_2b_id );
+
+   BOOST_TEST_MESSAGE( "Commit 1a" );
+
+   nodes.clear();
+   state_1a.reset();
+   state_1b.reset();
+   state_2a.reset();
+   state_2b.reset();
+   shared_db_lock.reset();
+
+   auto unique_db_lock = db.get_unique_lock();
+   db.commit_node( state_1a_id, unique_db_lock );
+
+   BOOST_TEST_MESSAGE( "Check all state nodes" );
+
+   nodes = db.get_all_nodes( unique_db_lock );
+   BOOST_REQUIRE_EQUAL( nodes.size(), 3 );
+   BOOST_CHECK( nodes[0]->id() == state_2a_id );
+   BOOST_CHECK( nodes[1]->id() == state_1a_id );
+   BOOST_CHECK( nodes[2]->id() == state_2b_id );
+
+} KOINOS_CATCH_LOG_AND_RETHROW(info) }
+
 BOOST_AUTO_TEST_SUITE_END()
