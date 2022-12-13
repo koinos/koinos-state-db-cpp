@@ -121,10 +121,13 @@ class database_impl final
       state_node_ptr get_node( const state_node_id& node_id, const unique_lock_ptr& lock ) const;
       state_node_ptr get_node_lockless( const state_node_id& node_id ) const;
       state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
+      state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock );
       state_node_ptr clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
+      state_node_ptr clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock );
       void finalize_node( const state_node_id& node, const shared_lock_ptr& lock );
       void finalize_node( const state_node_id& node, const unique_lock_ptr& lock );
       void discard_node( const state_node_id& node, const std::unordered_set< state_node_id >& whitelist, const shared_lock_ptr& lock );
+      void discard_node( const state_node_id& node, const std::unordered_set< state_node_id >& whitelist, const unique_lock_ptr& lock );
       void discard_node_lockless( const state_node_id& node, const std::unordered_set< state_node_id >& whitelist );
       void commit_node( const state_node_id& node, const unique_lock_ptr& lock );
 
@@ -419,6 +422,49 @@ state_node_ptr database_impl::create_writable_node( const state_node_id& parent_
    return state_node_ptr();
 }
 
+state_node_ptr database_impl::create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock )
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );;
+
+   // Needs to be configurable
+   auto timeout = std::chrono::system_clock::now() + std::chrono::seconds( 1 );
+
+   state_node_ptr parent_state = get_node( parent_id, lock );
+
+   if ( parent_state )
+   {
+      std::unique_lock< std::timed_mutex > cv_lock( parent_state->_impl->_state->cv_mutex(), timeout );
+
+      // We need to own the lock
+      if ( cv_lock.owns_lock() )
+      {
+         // Check if the node is finalized
+         bool is_finalized = parent_state->is_finalized();
+
+         // If the node is finalized, try to wait for the node to be finalized
+         if ( !is_finalized && parent_state->_impl->_state->cv().wait_until( cv_lock, timeout ) == std::cv_status::no_timeout )
+            is_finalized = parent_state->is_finalized();
+
+         // Finally, if the node is finalized, we can create a new writable node with the desired parent
+         if ( is_finalized )
+         {
+            auto node = std::make_shared< state_node >();
+            node->_impl->_state = parent_state->_impl->_state->make_child( new_id, header );
+
+            std::unique_lock< std::timed_mutex > index_lock( _index_mutex, timeout );
+
+            // Ensure the parent node still exists in the index and then insert the child node
+            if ( index_lock.owns_lock() && _index.find( parent_id ) != _index.end() && _index.insert( node->_impl->_state ).second )
+            {
+               return node;
+            }
+         }
+      }
+   }
+
+   return state_node_ptr();
+}
+
 state_node_ptr database_impl::clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock )
 {
    KOINOS_ASSERT( verify_shared_lock( lock ), illegal_argument, "database is not properly locked" );
@@ -435,6 +481,27 @@ state_node_ptr database_impl::clone_node( const state_node_id& node_id, const st
    if ( _index.insert( new_node->_impl->_state ).second )
    {
       new_node->_impl->_lock = lock;
+      return new_node;
+   }
+
+   return state_node_ptr();
+}
+
+state_node_ptr database_impl::clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock )
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   KOINOS_ASSERT( is_open(), database_not_open, "database is not open" );
+
+   auto node = get_node_lockless( node_id );
+   KOINOS_ASSERT( node, illegal_argument, "node ${n} not found.", ("n", node_id) );
+   KOINOS_ASSERT( !node->is_finalized(), illegal_argument, "cannot clone finalized node" );
+
+   auto new_node = std::make_shared< state_node >();
+   new_node->_impl->_state = node->_impl->_state->clone( new_id, header );
+
+   if ( _index.insert( new_node->_impl->_state ).second )
+   {
       return new_node;
    }
 
@@ -568,6 +635,14 @@ void database_impl::finalize_node( const state_node_id& node_id, const unique_lo
 void database_impl::discard_node( const state_node_id& node_id, const std::unordered_set< state_node_id >& whitelist, const shared_lock_ptr& lock )
 {
    KOINOS_ASSERT( verify_shared_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   std::unique_lock< std::shared_mutex > fork_heads_lock( _fork_heads_mutex );
+   discard_node_lockless( node_id, whitelist );
+}
+
+void database_impl::discard_node( const state_node_id& node_id, const std::unordered_set< state_node_id >& whitelist, const unique_lock_ptr& lock )
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
    std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
    std::unique_lock< std::shared_mutex > fork_heads_lock( _fork_heads_mutex );
    discard_node_lockless( node_id, whitelist );
@@ -1106,6 +1181,12 @@ state_node_ptr database::get_node_at_revision( uint64_t revision, const state_no
    return impl->get_node_at_revision( revision, child_id, lock );
 }
 
+state_node_ptr database::get_node_at_revision( uint64_t revision, const unique_lock_ptr& lock ) const
+{
+   static const state_node_id null_id;
+   return impl->get_node_at_revision( revision, null_id, lock );
+}
+
 state_node_ptr database::get_node( const state_node_id& node_id, const shared_lock_ptr& lock ) const
 {
    return impl->get_node( node_id, lock );
@@ -1121,7 +1202,17 @@ state_node_ptr database::create_writable_node( const state_node_id& parent_id, c
    return impl->create_writable_node( parent_id, new_id, header, lock );
 }
 
+state_node_ptr database::create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock )
+{
+   return impl->create_writable_node( parent_id, new_id, header, lock );
+}
+
 state_node_ptr database::clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock )
+{
+   return impl->clone_node( node_id, new_id, header, lock );
+}
+
+state_node_ptr database::clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const unique_lock_ptr& lock )
 {
    return impl->clone_node( node_id, new_id, header, lock );
 }
@@ -1137,6 +1228,12 @@ void database::finalize_node( const state_node_id& node_id, const unique_lock_pt
 }
 
 void database::discard_node( const state_node_id& node_id, const shared_lock_ptr& lock )
+{
+   static const std::unordered_set< state_node_id > whitelist;
+   impl->discard_node( node_id, whitelist, lock );
+}
+
+void database::discard_node( const state_node_id& node_id, const unique_lock_ptr& lock )
 {
    static const std::unordered_set< state_node_id > whitelist;
    impl->discard_node( node_id, whitelist, lock );
