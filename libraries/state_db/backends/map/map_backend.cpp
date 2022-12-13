@@ -63,4 +63,9 @@ void map_backend::end_write_batch() {}
 
 void map_backend::store_metadata() {}
 
+std::shared_ptr< abstract_backend > map_backend::clone() const
+{
+   return std::make_shared< map_backend >( *this );
+}
+
 } // koinos::state_db::backends::map

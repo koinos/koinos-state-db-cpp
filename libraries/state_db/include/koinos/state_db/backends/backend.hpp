@@ -48,6 +48,8 @@ class abstract_backend
 
       virtual void store_metadata() = 0;
 
+      virtual std::shared_ptr< abstract_backend > clone() const = 0;
+
    private:
       size_type              _revision = 0;
       crypto::multihash      _id;

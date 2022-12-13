@@ -74,6 +74,7 @@ namespace koinos::state_db::detail {
          const protocol::block_header& block_header() const;
 
          std::shared_ptr< state_delta > make_child( const state_node_id& id = state_node_id(), const protocol::block_header& header = protocol::block_header() );
+         std::shared_ptr< state_delta > clone( const state_node_id& id, const protocol::block_header& header );
 
          const std::shared_ptr< backend_type > backend() const;
 

@@ -275,6 +275,13 @@ class database final
       state_node_ptr create_writable_node( const state_node_id& parent_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
 
       /**
+       * Clone a node with a new id and block header.
+       *
+       * Cannot clone root.
+       */
+      state_node_ptr clone_node( const state_node_id& node_id, const state_node_id& new_id, const protocol::block_header& header, const shared_lock_ptr& lock );
+
+      /**
        * Finalize a node. The node will no longer be writable.
        */
       void finalize_node( const state_node_id& node_id, const shared_lock_ptr& lock );
@@ -335,9 +342,17 @@ class database final
        * Get and return a vector of all fork heads.
        *
        * Fork heads are any finalized nodes that do
-       * not have children.
+       * not have finalized children.
        */
       std::vector< state_node_ptr > get_fork_heads( const shared_lock_ptr& lock ) const;
+
+      /**
+       * Get and return a vector of all fork heads.
+       *
+       * Fork heads are any finalized nodes that do
+       * not have finalized children.
+       */
+      std::vector< state_node_ptr > get_fork_heads( const unique_lock_ptr& lock ) const;
 
       /**
        * Get and return the current "root" node.
