@@ -1547,4 +1547,60 @@ BOOST_AUTO_TEST_CASE( persistence )
 
 } KOINOS_CATCH_LOG_AND_RETHROW(info) }
 
+BOOST_AUTO_TEST_CASE( clone_node )
+{ try {
+   BOOST_TEST_MESSAGE( "Check clone of un-finalized node" );
+
+   object_space space;
+   std::string a_key = "a";
+   std::string a_val = "alice";
+   std::string b_key = "bob";
+   std::string b_val = "bob";
+   std::string c_key = "charlie";
+   std::string c_val = "charlie";
+   std::string d_key = "dave";
+   std::string d_val = "dave";
+
+   auto shared_db_lock = db.get_shared_lock();
+
+   chain::database_key db_key;
+   *db_key.mutable_space() = space;
+   db_key.set_key( a_key );
+
+   crypto::multihash state_1a_id = crypto::hash( crypto::multicodec::sha2_256, 0x1a );
+   auto state_1a = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_1a_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_1a );
+   state_1a->put_object( space, a_key, &a_val );
+   state_1a->put_object( space, b_key, &b_val );
+   db.finalize_node( state_1a_id, shared_db_lock );
+
+   crypto::multihash state_2a_id = crypto::hash( crypto::multicodec::sha2_256, 0x2a );
+   auto state_2a = db.create_writable_node( state_1a_id, state_2a_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_2a );
+   state_2a->put_object( space, c_key, &c_val );
+   state_2a->remove_object( space, a_key );
+
+   crypto::multihash state_2b_id = crypto::hash( crypto::multicodec::sha2_256, 0x2b );
+   auto state_2b = db.clone_node( state_2a_id, state_2b_id, protocol::block_header(), shared_db_lock );
+   BOOST_REQUIRE( state_2b );
+   BOOST_CHECK( !state_2b->is_finalized() );
+   BOOST_CHECK( !state_2b->get_object( space, a_key ) );
+   BOOST_REQUIRE( state_2b->get_object( space, b_key ) );
+   BOOST_CHECK_EQUAL( *state_2b->get_object( space, b_key ), b_val );
+   BOOST_REQUIRE( state_2b->get_object( space, c_key ) );
+   BOOST_CHECK_EQUAL( *state_2b->get_object( space, c_key ), c_val );
+
+   state_2b->remove_object( space, b_key );
+   state_2b->put_object( space, d_key, &d_val );
+
+   BOOST_REQUIRE( state_2a->get_object( space, b_key ) );
+   BOOST_CHECK_EQUAL( *state_2a->get_object( space, b_key ), b_val );
+   BOOST_CHECK( !state_2a->get_object( space, d_key ) );
+
+   BOOST_TEST_MESSAGE( "Checking clone of a finalized node" );
+
+   crypto::multihash state_1b_id = crypto::hash( crypto::multicodec::sha2_256, 0x1b );
+   BOOST_REQUIRE_THROW( db.clone_node( state_1a_id, state_1b_id, protocol::block_header(), shared_db_lock ), illegal_argument );
+} KOINOS_CATCH_LOG_AND_RETHROW(info) }
+
 BOOST_AUTO_TEST_SUITE_END()

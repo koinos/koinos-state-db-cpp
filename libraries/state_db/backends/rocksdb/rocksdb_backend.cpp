@@ -507,4 +507,9 @@ void rocksdb_backend::store_metadata()
    KOINOS_ASSERT( status.ok(), rocksdb_write_exception, "unable to write to rocksdb database" + ( status.getState() ? ", " + std::string( status.getState() ) : "" ) );
 }
 
+std::shared_ptr< abstract_backend > rocksdb_backend::clone() const
+{
+   KOINOS_THROW( internal_exception, "rocksdb_backend, 'clone' not implemented" );
+}
+
 } // koinos::state_db::backends::rocksdb

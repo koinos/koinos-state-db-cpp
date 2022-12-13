@@ -35,6 +35,8 @@ class map_backend final : public abstract_backend {
 
       virtual void store_metadata() override;
 
+      virtual std::shared_ptr< abstract_backend > clone() const override;
+
    private:
       std::map< key_type, value_type > _map;
       protocol::block_header           _header;

@@ -259,6 +259,31 @@ std::shared_ptr< state_delta > state_delta::make_child( const state_node_id& id,
    return child;
 }
 
+std::shared_ptr< state_delta > state_delta::clone( const state_node_id& id, const protocol::block_header& header )
+{
+   auto new_node = std::make_shared< state_delta >();
+   new_node->_parent = _parent;
+   new_node->_backend = _backend->clone();
+   new_node->_removed_objects = _removed_objects;
+
+   new_node->_id = id;
+   new_node->_revision = _revision;
+   new_node->_merkle_root = _merkle_root;
+
+   new_node->_finalized = _finalized;
+
+   new_node->_backend->set_id( id );
+   new_node->_backend->set_revision( _revision );
+   new_node->_backend->set_block_header( header );
+
+   if ( _merkle_root )
+   {
+      new_node->_backend->set_merkle_root( *_merkle_root );
+   }
+
+   return new_node;
+}
+
 const std::shared_ptr< backend_type > state_delta::backend() const
 {
    return _backend;
