@@ -418,6 +418,21 @@ class database final
       std::vector< state_node_ptr > get_fork_heads( const unique_lock_ptr& lock ) const;
 
       /**
+       * Get and return a vector of all nodes.
+       */
+      std::vector< state_node_ptr > get_all_nodes( const shared_lock_ptr& lock ) const;
+
+      /**
+       * Get and return a vector of all nodes.
+       *
+       * WARNING: The state nodes returned does not have an internal lock. The caller
+       * must be careful to ensure internal consistency. Best practice is to not
+       * share this node with a parallel thread and to reset it before releasing the
+       * unique lock.
+       */
+      std::vector< state_node_ptr > get_all_nodes( const unique_lock_ptr& lock ) const;
+
+      /**
        * Get and return the current "root" node.
        *
        * All state nodes are guaranteed to a descendant of root.

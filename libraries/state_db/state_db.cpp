@@ -137,6 +137,8 @@ class database_impl final
       state_node_ptr get_head_lockless() const;
       std::vector< state_node_ptr > get_fork_heads( const shared_lock_ptr& lock ) const;
       std::vector< state_node_ptr > get_fork_heads( const unique_lock_ptr& lock ) const;
+      std::vector< state_node_ptr > get_all_nodes( const shared_lock_ptr& lock ) const;
+      std::vector< state_node_ptr > get_all_nodes( const unique_lock_ptr& lock ) const;
       state_node_ptr get_root( const shared_lock_ptr& lock ) const;
       state_node_ptr get_root( const unique_lock_ptr& lock ) const;
       state_node_ptr get_root_lockless() const;
@@ -819,6 +821,43 @@ std::vector< state_node_ptr > database_impl::get_fork_heads( const unique_lock_p
    return fork_heads;
 }
 
+std::vector< state_node_ptr > database_impl::get_all_nodes( const shared_lock_ptr& lock ) const
+{
+   KOINOS_ASSERT( verify_shared_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   KOINOS_ASSERT( is_open(), database_not_open, "database is not open" );
+   std::vector< state_node_ptr > nodes;
+   nodes.reserve( _index.size() );
+
+   for ( const auto& delta : _index )
+   {
+      auto node = std::make_shared< state_node >();
+      node->_impl->_state = delta;
+      node->_impl->_lock = lock;
+      nodes.push_back( node );
+   }
+
+   return nodes;
+}
+
+std::vector< state_node_ptr > database_impl::get_all_nodes( const unique_lock_ptr& lock ) const
+{
+   KOINOS_ASSERT( verify_unique_lock( lock ), illegal_argument, "database is not properly locked" );
+   std::lock_guard< std::timed_mutex > index_lock( _index_mutex );
+   KOINOS_ASSERT( is_open(), database_not_open, "database is not open" );
+   std::vector< state_node_ptr > nodes;
+   nodes.reserve( _index.size() );
+
+   for ( const auto& delta : _index )
+   {
+      auto node = std::make_shared< state_node >();
+      node->_impl->_state = delta;
+      nodes.push_back( node );
+   }
+
+   return nodes;
+}
+
 state_node_ptr database_impl::get_root( const shared_lock_ptr& lock ) const
 {
    KOINOS_ASSERT( verify_shared_lock( lock ), illegal_argument, "database is not properly locked" );
@@ -1291,6 +1330,16 @@ std::vector< state_node_ptr > database::get_fork_heads( const shared_lock_ptr& l
 std::vector< state_node_ptr > database::get_fork_heads( const unique_lock_ptr& lock ) const
 {
    return impl->get_fork_heads( lock );
+}
+
+std::vector< state_node_ptr > database::get_all_nodes( const shared_lock_ptr& lock ) const
+{
+   return impl->get_all_nodes( lock );
+}
+
+std::vector< state_node_ptr > database::get_all_nodes( const unique_lock_ptr& lock ) const
+{
+   return impl->get_all_nodes( lock );
 }
 
 state_node_ptr database::get_root( const shared_lock_ptr& lock ) const
