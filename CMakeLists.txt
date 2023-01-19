@@ -31,8 +31,8 @@ set(
 include("cmake/HunterGate.cmake")
 
 HunterGate(
-   URL "https://github.com/cpp-pm/hunter/archive/v0.23.313.tar.gz"
-   SHA1 "6c369e5aab2749a616917df3b23511535f413604"
+   URL "https://github.com/cpp-pm/hunter/archive/v0.24.14.tar.gz"
+   SHA1 "00901c19eefc02d24b16705b5f5a2b4f093a73fb"
    LOCAL
 )
 
@@ -54,6 +54,10 @@ set(KOINOS_LIB_CMAKE_VERSION_CONFIG_FILE  "${KOINOS_LIB_CMAKE_CONFIG_DIR}/${PROJ
 set(KOINOS_LIB_CMAKE_PROJECT_CONFIG_FILE  "${KOINOS_LIB_CMAKE_CONFIG_DIR}/${PROJECT_NAME}Config.cmake")
 set(KOINOS_LIB_CMAKE_PROJECT_TARGETS_FILE "${KOINOS_LIB_CMAKE_CONFIG_DIR}/${PROJECT_NAME}Targets.cmake")
 set(KOINOS_LIB_PKGCONFIG_INSTALL_DIR      "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
+   cmake_policy(SET CMP0074 NEW)
+endif ()
 
 option(BUILD_TESTS "Build Tests" ON)
 option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
@@ -93,6 +97,11 @@ hunter_add_package(OpenSSL)
 hunter_add_package(rocksdb)
 hunter_add_package(yaml-cpp)
 hunter_add_package(Protobuf)
+hunter_add_package(gRPC)
+hunter_add_package(abseil)
+hunter_add_package(re2)
+hunter_add_package(c-ares)
+hunter_add_package(ZLIB)
 
 hunter_add_package(koinos_util)
 hunter_add_package(koinos_log)
@@ -108,6 +117,11 @@ find_package(libsecp256k1-vrf CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+find_package(absl CONFIG REQUIRED)
+find_package(re2 CONFIG REQUIRED)
+find_package(c-ares CONFIG REQUIRED)
+find_package(ZLIB CONFIG REQUIRED)
 
 find_package(koinos_util CONFIG REQUIRED)
 find_package(koinos_log CONFIG REQUIRED)
