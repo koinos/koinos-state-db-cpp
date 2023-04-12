@@ -348,9 +348,14 @@ std::vector<state_delta_entry> state_delta::get_delta_entries() const {
 
    for (const auto &key : object_keys) {
       state_delta_entry entry;
-      //entry.set_space
-      entry.set_key( key );
-      //entry.set_value( &_backend->get(key) );
+
+      // Deserialize the key into a database_key object
+      koinos::chain::database_key db_key;
+      db_key.ParseFromString(key);
+
+      entry.set_allocated_object_space( db_key.mutable_space() );
+      entry.set_key( db_key.key() );
+      entry.set_value( *_backend->get(key) );
       deltas.push_back(entry);
    }
 
