@@ -5,6 +5,7 @@
 #include <koinos/state_db/detail/merge_iterator.hpp>
 #include <koinos/state_db/detail/state_delta.hpp>
 #include <koinos/util/conversion.hpp>
+#include <koinos/state_db/state_db.pb.h>
 
 #include <condition_variable>
 #include <cstring>
@@ -108,6 +109,7 @@ class state_node_impl final
       int64_t put_object( const object_space& space, const object_key& key, const object_value* val );
       int64_t remove_object( const object_space& space, const object_key& key );
       crypto::multihash merkle_root() const;
+      std::vector<state_delta_entry> get_delta_entries() const;
 
       state_delta_ptr _state;
       shared_lock_ptr _lock;
@@ -1036,6 +1038,11 @@ crypto::multihash state_node_impl::merkle_root() const
    return _state->merkle_root();
 }
 
+std::vector<state_delta_entry> state_node_impl::get_delta_entries() const
+{
+   return _state->get_delta_entries();
+}
+
 } // detail
 
 abstract_state_node::abstract_state_node() : _impl( new detail::state_node_impl() ) {}
@@ -1073,8 +1080,14 @@ bool abstract_state_node::is_finalized() const
 
 crypto::multihash abstract_state_node::merkle_root() const
 {
-   KOINOS_ASSERT( is_finalized(), koinos::exception, "node must be finalized to calculation merkle root" );
+   KOINOS_ASSERT( is_finalized(), koinos::exception, "node must be finalized to calculate merkle root" );
    return _impl->merkle_root();
+}
+
+std::vector<state_delta_entry> abstract_state_node::get_delta_entries() const
+{
+   KOINOS_ASSERT( is_finalized(), koinos::exception, "node must be finalized to get the delta entries" );
+   return _impl->get_delta_entries();
 }
 
 anonymous_state_node_ptr abstract_state_node::create_anonymous_node()

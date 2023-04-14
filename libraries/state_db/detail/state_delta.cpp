@@ -331,7 +331,7 @@ std::shared_ptr< state_delta > state_delta::get_root()
 }
 
 std::vector<state_delta_entry> state_delta::get_delta_entries() const {
-   std::vector<std::string> object_keys;
+   std::vector< std::string > object_keys;
    object_keys.reserve( _backend->size() + _removed_objects.size() );
    for ( auto itr = _backend->begin(); itr != _backend->end(); ++itr ) {
       object_keys.push_back( itr.key() );
@@ -355,7 +355,7 @@ std::vector<state_delta_entry> state_delta::get_delta_entries() const {
 
       entry.set_allocated_object_space( db_key.mutable_space() );
       entry.set_key( db_key.key() );
-      entry.set_value( *_backend->get(key) );
+      entry.set_value( *_backend->get( key ) );
       deltas.push_back( entry );
    }
 

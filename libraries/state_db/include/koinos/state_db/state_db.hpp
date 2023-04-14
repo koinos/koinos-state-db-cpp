@@ -3,6 +3,7 @@
 #include <koinos/state_db/state_db_types.hpp>
 
 #include <koinos/protocol/protocol.pb.h>
+#include <koinos/state_db/state_db.pb.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 
@@ -97,6 +98,11 @@ class abstract_state_node
        * Return the merkle root of writes on this state node
        */
       crypto::multihash merkle_root() const;
+
+      /**
+       * Returns the state delta entries associated with this state node
+      */
+      std::vector<state_delta_entry> get_delta_entries() const;
 
       /**
        * Returns an anonymous state node with this node as its parent.
