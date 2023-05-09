@@ -351,12 +351,15 @@ std::vector<state_delta_entry> state_delta::get_delta_entries() const {
 
       // Deserialize the key into a database_key object
       koinos::chain::database_key db_key;
-      db_key.ParseFromString( key );
-
-      entry.set_allocated_object_space( db_key.mutable_space() );
-      entry.set_key( db_key.key() );
-      entry.set_value( *_backend->get( key ) );
-      deltas.push_back( entry );
+      if (db_key.ParseFromString( key ))
+      {
+         entry.mutable_object_space()->CopyFrom(db_key.space());
+         entry.set_key( db_key.key() );
+         auto value = _backend->get( key );
+         // Set the optional field if not null
+         if (value != nullptr) { entry.set_value(*value); }
+         deltas.push_back( entry );
+      }
    }
 
    return deltas;
