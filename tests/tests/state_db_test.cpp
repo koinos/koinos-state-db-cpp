@@ -13,8 +13,6 @@
 #include <koinos/util/conversion.hpp>
 #include <koinos/util/random.hpp>
 #include <koinos/util/hex.hpp>
-#include <google/protobuf/util/message_differencer.h>
-
 
 #include <deque>
 #include <iostream>

@@ -1086,7 +1086,6 @@ crypto::multihash abstract_state_node::merkle_root() const
 
 std::vector<state_delta_entry> abstract_state_node::get_delta_entries() const
 {
-   //KOINOS_ASSERT( is_finalized(), koinos::exception, "node must be finalized to get the delta entries" );
    return _impl->get_delta_entries();
 }
 
