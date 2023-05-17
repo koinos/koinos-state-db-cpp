@@ -1038,7 +1038,7 @@ crypto::multihash state_node_impl::merkle_root() const
    return _state->merkle_root();
 }
 
-std::vector<protocol::state_delta_entry> state_node_impl::get_delta_entries() const
+std::vector< protocol::state_delta_entry > state_node_impl::get_delta_entries() const
 {
    return _state->get_delta_entries();
 }
@@ -1084,7 +1084,7 @@ crypto::multihash abstract_state_node::merkle_root() const
    return _impl->merkle_root();
 }
 
-std::vector<protocol::state_delta_entry> abstract_state_node::get_delta_entries() const
+std::vector< protocol::state_delta_entry > abstract_state_node::get_delta_entries() const
 {
    return _impl->get_delta_entries();
 }
