@@ -111,8 +111,8 @@ hunter_config(koinos_util
 )
 
 hunter_config(koinos_proto
-   URL  "https://github.com/koinos/koinos-proto-cpp/archive/69514fe05e6e571885dddfadd4f5ec6305f4c7a3.tar.gz"
-   SHA1 "e107fa2bed1815d82353e200000b02f19322a13b"
+   URL  "https://github.com/koinos/koinos-proto-cpp/archive/04d6a7f0cf8d2eeaddd105441c398eaff8a1a519.tar.gz"
+   SHA1 "6d168b017b2545b03b8cd3ea4b1590b471da78e7"
 )
 
 hunter_config(koinos_exception

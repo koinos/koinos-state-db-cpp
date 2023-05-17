@@ -5,7 +5,7 @@
 #include <koinos/state_db/detail/merge_iterator.hpp>
 #include <koinos/state_db/detail/state_delta.hpp>
 #include <koinos/util/conversion.hpp>
-#include <koinos/state_db/state_db.pb.h>
+#include <koinos/protocol/protocol.pb.h>
 
 #include <condition_variable>
 #include <cstring>
@@ -109,7 +109,7 @@ class state_node_impl final
       int64_t put_object( const object_space& space, const object_key& key, const object_value* val );
       int64_t remove_object( const object_space& space, const object_key& key );
       crypto::multihash merkle_root() const;
-      std::vector<state_delta_entry> get_delta_entries() const;
+      std::vector< protocol::state_delta_entry > get_delta_entries() const;
 
       state_delta_ptr _state;
       shared_lock_ptr _lock;
@@ -1038,7 +1038,7 @@ crypto::multihash state_node_impl::merkle_root() const
    return _state->merkle_root();
 }
 
-std::vector<state_delta_entry> state_node_impl::get_delta_entries() const
+std::vector<protocol::state_delta_entry> state_node_impl::get_delta_entries() const
 {
    return _state->get_delta_entries();
 }
@@ -1084,7 +1084,7 @@ crypto::multihash abstract_state_node::merkle_root() const
    return _impl->merkle_root();
 }
 
-std::vector<state_delta_entry> abstract_state_node::get_delta_entries() const
+std::vector<protocol::state_delta_entry> abstract_state_node::get_delta_entries() const
 {
    return _impl->get_delta_entries();
 }

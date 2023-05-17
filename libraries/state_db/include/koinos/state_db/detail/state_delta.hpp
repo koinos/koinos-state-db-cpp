@@ -6,7 +6,6 @@
 
 #include <koinos/crypto/multihash.hpp>
 #include <koinos/protocol/protocol.pb.h>
-#include <koinos/state_db/state_db.pb.h>
 
 #include <any>
 #include <condition_variable>
@@ -68,7 +67,7 @@ namespace koinos::state_db::detail {
          std::timed_mutex& cv_mutex();
 
          crypto::multihash merkle_root() const;
-         std::vector<state_delta_entry> get_delta_entries() const;
+         std::vector< protocol::state_delta_entry > get_delta_entries() const;
 
          const state_node_id& id() const;
          const state_node_id& parent_id() const;
