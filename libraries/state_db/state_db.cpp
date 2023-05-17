@@ -5,7 +5,6 @@
 #include <koinos/state_db/detail/merge_iterator.hpp>
 #include <koinos/state_db/detail/state_delta.hpp>
 #include <koinos/util/conversion.hpp>
-#include <koinos/protocol/protocol.pb.h>
 
 #include <condition_variable>
 #include <cstring>
