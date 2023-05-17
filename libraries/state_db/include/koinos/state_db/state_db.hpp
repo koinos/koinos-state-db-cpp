@@ -99,6 +99,11 @@ class abstract_state_node
       crypto::multihash merkle_root() const;
 
       /**
+       * Returns the state delta entries associated with this state node
+      */
+      std::vector< protocol::state_delta_entry > get_delta_entries() const;
+
+      /**
        * Returns an anonymous state node with this node as its parent.
        */
       anonymous_state_node_ptr create_anonymous_node();

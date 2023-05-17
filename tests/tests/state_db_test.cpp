@@ -14,7 +14,6 @@
 #include <koinos/util/random.hpp>
 #include <koinos/util/hex.hpp>
 
-
 #include <deque>
 #include <iostream>
 #include <filesystem>
@@ -789,6 +788,87 @@ BOOST_AUTO_TEST_CASE( merkle_root_test )
    state_2 = db.get_node( state_2_id, db.get_shared_lock() );
    BOOST_CHECK_EQUAL( merkle_root, state_2->merkle_root() );
 
+} KOINOS_CATCH_LOG_AND_RETHROW(info) }
+
+BOOST_AUTO_TEST_CASE( get_delta_entries_test )
+{ try {
+   auto shared_db_lock = db.get_shared_lock();
+
+   auto state_1_id = crypto::hash( crypto::multicodec::sha2_256, 1 );
+   auto state_1 = db.create_writable_node( db.get_head( shared_db_lock )->id(), state_1_id, protocol::block_header(), shared_db_lock );
+
+   object_space space;
+   std::string a_key = "a";
+   std::string a_val = "alice";
+   std::string b_key = "b";
+   std::string b_val = "bob";
+   std::string c_key = "c";
+   std::string c_val = "charlie";
+
+   state_1->put_object( space, c_key, &c_val );
+   state_1->put_object( space, b_key, &b_val );
+   state_1->put_object( space, a_key, &a_val );
+
+   chain::database_key a_db_key;
+   *a_db_key.mutable_space() = space;
+   a_db_key.set_key( a_key );
+
+   chain::database_key b_db_key;
+   *b_db_key.mutable_space() = space;
+   b_db_key.set_key( b_key );
+
+   chain::database_key c_db_key;
+   *c_db_key.mutable_space() = space;
+   c_db_key.set_key( c_key );
+
+   auto entries = state_1->get_delta_entries();
+
+   BOOST_CHECK_EQUAL( 3, entries.size() );
+
+   BOOST_CHECK_EQUAL( a_key, entries[0].key() );
+   BOOST_CHECK_EQUAL( space.DebugString(), entries[0].object_space().DebugString() );
+   BOOST_CHECK_EQUAL( a_val, entries[0].value() );
+
+   BOOST_CHECK_EQUAL( b_key, entries[1].key() );
+   BOOST_CHECK_EQUAL( space.DebugString(), entries[1].object_space().DebugString() );
+   BOOST_CHECK_EQUAL( b_val, entries[1].value() );
+
+   BOOST_CHECK_EQUAL( c_key, entries[2].key() );
+   BOOST_CHECK_EQUAL( space.DebugString(), entries[2].object_space().DebugString() );
+   BOOST_CHECK_EQUAL( c_val, entries[2].value() );
+
+   db.finalize_node( state_1_id, shared_db_lock );
+
+   auto state_2_id = crypto::hash( crypto::multicodec::sha2_256, 2 );
+   auto state_2 = db.create_writable_node( state_1_id, state_2_id, protocol::block_header(), shared_db_lock );
+
+   std::string d_key = "d";
+   std::string d_val = "dave";
+   a_val = "alicia";
+
+   state_2->put_object( space, a_key, &a_val );
+   state_2->put_object( space, d_key, &d_val );
+   state_2->remove_object( space, b_key );
+
+   chain::database_key d_db_key;
+   *d_db_key.mutable_space() = space;
+   d_db_key.set_key( d_key );
+
+   auto entries2 = state_2->get_delta_entries();
+   BOOST_CHECK_EQUAL( 3, entries.size() );
+
+   BOOST_CHECK_EQUAL( a_key, entries2[0].key() );
+   BOOST_CHECK_EQUAL( space.DebugString(), entries2[0].object_space().DebugString() );
+   BOOST_CHECK_EQUAL( a_val, entries2[0].value() );
+
+   BOOST_CHECK_EQUAL( b_key, entries2[1].key() );
+   BOOST_CHECK_EQUAL( space.DebugString(), entries2[1].object_space().DebugString() );
+   BOOST_CHECK_EQUAL( false, entries2[1].has_value() ); // Deleted value
+
+   BOOST_CHECK_EQUAL( d_key, entries2[2].key() );
+   BOOST_CHECK_EQUAL( space.DebugString(), entries2[2].object_space().DebugString() );
+   BOOST_CHECK_EQUAL( d_val, entries2[2].value() );
+   
 } KOINOS_CATCH_LOG_AND_RETHROW(info) }
 
 BOOST_AUTO_TEST_CASE( rocksdb_backend_test )

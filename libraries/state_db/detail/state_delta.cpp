@@ -328,4 +328,46 @@ std::shared_ptr< state_delta > state_delta::get_root()
    return std::shared_ptr< state_delta >();
 }
 
+std::vector< protocol::state_delta_entry > state_delta::get_delta_entries() const
+{
+   std::vector< std::string > object_keys;
+   object_keys.reserve( _backend->size() + _removed_objects.size() );
+   for ( auto itr = _backend->begin(); itr != _backend->end(); ++itr ) {
+      object_keys.push_back( itr.key() );
+   }
+
+   for ( const auto &removed : _removed_objects ) {
+      object_keys.push_back( removed );
+   }
+
+   std::sort( object_keys.begin(), object_keys.end() );
+
+   std::vector< protocol::state_delta_entry > deltas;
+   deltas.reserve( object_keys.size() );
+
+   for ( const auto &key : object_keys ) {
+      protocol::state_delta_entry entry;
+
+      // Deserialize the key into a database_key object
+      koinos::chain::database_key db_key;
+      if ( db_key.ParseFromString( key ) )
+      {
+         entry.mutable_object_space()->set_system( db_key.space().system() );
+         entry.mutable_object_space()->set_zone( db_key.space().zone() );
+         entry.mutable_object_space()->set_id( db_key.space().id() );
+         
+         entry.set_key( db_key.key() );
+         auto value = _backend->get( key );
+         
+         // Set the optional field if not null
+         if ( value != nullptr )
+            entry.set_value( *value );
+         
+         deltas.push_back( entry );
+      }
+   }
+
+   return deltas;
+}
+
 } // koinos::state_db::detail

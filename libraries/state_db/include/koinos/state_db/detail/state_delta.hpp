@@ -67,6 +67,7 @@ namespace koinos::state_db::detail {
          std::timed_mutex& cv_mutex();
 
          crypto::multihash merkle_root() const;
+         std::vector< protocol::state_delta_entry > get_delta_entries() const;
 
          const state_node_id& id() const;
          const state_node_id& parent_id() const;
@@ -75,7 +76,7 @@ namespace koinos::state_db::detail {
 
          std::shared_ptr< state_delta > make_child( const state_node_id& id = state_node_id(), const protocol::block_header& header = protocol::block_header() );
          std::shared_ptr< state_delta > clone( const state_node_id& id, const protocol::block_header& header );
-
+         
          const std::shared_ptr< backend_type > backend() const;
 
       private:
