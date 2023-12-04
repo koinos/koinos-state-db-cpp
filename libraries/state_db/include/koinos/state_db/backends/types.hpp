@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace koinos::state_db::backends::detail {
