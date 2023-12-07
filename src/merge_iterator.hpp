@@ -1,6 +1,6 @@
 #pragma once
 
-#include <koinos/state_db/detail/state_delta.hpp>
+#include "state_delta.hpp"
 
 #include <boost/iterator/zip_iterator.hpp>
 

@@ -1,5 +1,8 @@
 #include <boost/test/unit_test.hpp>
 
+#include "merge_iterator.hpp"
+#include "state_delta.hpp"
+
 #include <koinos/bigint.hpp>
 #include <koinos/crypto/merkle_tree.hpp>
 #include <koinos/crypto/multihash.hpp>
@@ -7,8 +10,6 @@
 #include <koinos/exception.hpp>
 #include <koinos/state_db/backends/map/map_backend.hpp>
 #include <koinos/state_db/backends/rocksdb/rocksdb_backend.hpp>
-#include <koinos/state_db/detail/merge_iterator.hpp>
-#include <koinos/state_db/detail/state_delta.hpp>
 #include <koinos/state_db/state_db.hpp>
 #include <koinos/util/conversion.hpp>
 #include <koinos/util/random.hpp>
@@ -868,7 +869,7 @@ BOOST_AUTO_TEST_CASE( get_delta_entries_test )
    BOOST_CHECK_EQUAL( d_key, entries2[2].key() );
    BOOST_CHECK_EQUAL( space.DebugString(), entries2[2].object_space().DebugString() );
    BOOST_CHECK_EQUAL( d_val, entries2[2].value() );
-   
+
 } KOINOS_CATCH_LOG_AND_RETHROW(info) }
 
 BOOST_AUTO_TEST_CASE( rocksdb_backend_test )

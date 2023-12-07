@@ -1,4 +1,4 @@
-#include <koinos/state_db/detail/state_delta.hpp>
+#include "state_delta.hpp"
 
 #include <koinos/crypto/merkle_tree.hpp>
 
@@ -355,14 +355,14 @@ std::vector< protocol::state_delta_entry > state_delta::get_delta_entries() cons
          entry.mutable_object_space()->set_system( db_key.space().system() );
          entry.mutable_object_space()->set_zone( db_key.space().zone() );
          entry.mutable_object_space()->set_id( db_key.space().id() );
-         
+
          entry.set_key( db_key.key() );
          auto value = _backend->get( key );
-         
+
          // Set the optional field if not null
          if ( value != nullptr )
             entry.set_value( *value );
-         
+
          deltas.push_back( entry );
       }
    }

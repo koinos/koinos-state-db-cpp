@@ -3,7 +3,7 @@
 set -e
 set -x
 
-cd $(dirname "$0")/../build/tests
+cd $TRAVIS_BUILD_DIR/build/tests
 if [ "$RUN_TYPE" = "test" ]; then
    exec ctest -j3 --output-on-failure
 elif [ "$RUN_TYPE" = "coverage" ]; then
