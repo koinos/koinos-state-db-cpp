@@ -56,9 +56,6 @@ koinos_add_package(koinos_log CONFIG REQUIRED)
 koinos_add_package(koinos_crypto CONFIG REQUIRED)
 koinos_add_package(koinos_util CONFIG REQUIRED)
 
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
-
 add_subdirectory(src)
 add_subdirectory(tests)
 
