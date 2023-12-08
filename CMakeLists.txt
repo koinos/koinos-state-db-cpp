@@ -31,7 +31,7 @@ koinos_define_version()
 
 koinos_coverage(
   EXECUTABLE
-    koinos_statedb_tests
+  koinos_state_db_tests
   EXCLUDE
     "tests/*"
 )
