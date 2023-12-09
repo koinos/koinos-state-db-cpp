@@ -34,7 +34,7 @@ target_link_libraries(
       Koinos::crypto
       RocksDB::rocksdb)
 
-koinos_add_format_target(state_db)
+koinos_add_format(TARGET state_db)
 
 target_include_directories(
   state_db
@@ -45,9 +45,11 @@ target_include_directories(
 
 add_library(Koinos::state_db ALIAS state_db)
 
+koinos_install(TARGETS state_db)
+
 install(
   DIRECTORY
     ${PROJECT_SOURCE_DIR}/include
   DESTINATION
-    include/
+    ${CMAKE_INSTALL_PREFIX}
 )
