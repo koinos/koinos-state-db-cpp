@@ -19,7 +19,7 @@ jobs:
     - os: linux
       dist: jammy
       env:
-        - RUN_TIME=static-coverage
+        - RUN_TIME=static-analysis
         - MATRIX_EVAL="CC=clang && CXX=clang++"
     - os: linux
       dist: jammy
