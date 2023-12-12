@@ -7,4 +7,4 @@ KOINOS_DECLARE_DERIVED_EXCEPTION( backend_exception, state_db_exception );
 KOINOS_DECLARE_DERIVED_EXCEPTION( iterator_exception, state_db_exception );
 KOINOS_DECLARE_DERIVED_EXCEPTION( internal_exception, state_db_exception );
 
-} // koinos::state_db::backends
+} // namespace koinos::state_db::backends

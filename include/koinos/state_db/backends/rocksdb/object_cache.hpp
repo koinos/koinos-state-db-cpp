@@ -14,39 +14,33 @@ namespace koinos::state_db::backends::rocksdb {
 
 class object_cache
 {
-   public:
-      using key_type       = detail::key_type;
-      using value_type     = detail::value_type;
+public:
+  using key_type   = detail::key_type;
+  using value_type = detail::value_type;
 
-   private:
-      using lru_list_type  = std::list< key_type >;
-      using value_map_type =
-         std::map<
-            key_type,
-            std::pair<
-               std::shared_ptr< const value_type >,
-               typename lru_list_type::iterator
-            >
-         >;
+private:
+  using lru_list_type = std::list< key_type >;
+  using value_map_type =
+    std::map< key_type, std::pair< std::shared_ptr< const value_type >, typename lru_list_type::iterator > >;
 
-      lru_list_type     _lru_list;
-      value_map_type    _object_map;
-      std::size_t       _cache_size = 0;
-      const std::size_t _cache_max_size;
-      std::mutex        _mutex;
+  lru_list_type _lru_list;
+  value_map_type _object_map;
+  std::size_t _cache_size = 0;
+  const std::size_t _cache_max_size;
+  std::mutex _mutex;
 
-   public:
-      object_cache( std::size_t size );
-      ~object_cache();
+public:
+  object_cache( std::size_t size );
+  ~object_cache();
 
-      std::pair< bool, std::shared_ptr< const value_type > > get( const key_type& k );
-      std::shared_ptr< const value_type > put( const key_type& k, std::shared_ptr< const value_type > v );
+  std::pair< bool, std::shared_ptr< const value_type > > get( const key_type& k );
+  std::shared_ptr< const value_type > put( const key_type& k, std::shared_ptr< const value_type > v );
 
-      void remove( const key_type& k );
+  void remove( const key_type& k );
 
-      void clear();
+  void clear();
 
-      std::mutex& get_mutex();
+  std::mutex& get_mutex();
 };
 
-} // koinos::state_db::backends::rocksdb
+} // namespace koinos::state_db::backends::rocksdb

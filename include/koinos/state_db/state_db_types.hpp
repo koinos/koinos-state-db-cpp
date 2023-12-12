@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <string>
 
-#include <koinos/exception.hpp>
 #include <koinos/chain/chain.pb.h>
 #include <koinos/crypto/multihash.hpp>
+#include <koinos/exception.hpp>
 
 namespace koinos::state_db {
 
@@ -49,4 +49,4 @@ KOINOS_DECLARE_DERIVED_EXCEPTION( cannot_discard, state_db_exception );
  */
 KOINOS_DECLARE_DERIVED_EXCEPTION( internal_error, state_db_exception );
 
-} // koinos::state_db
+} // namespace koinos::state_db
