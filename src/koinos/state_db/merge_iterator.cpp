@@ -1,4 +1,4 @@
-#include "merge_iterator.hpp"
+#include <koinos/state_db/merge_iterator.hpp>
 
 namespace koinos::state_db::detail {
 

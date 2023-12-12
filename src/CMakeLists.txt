@@ -1,17 +1,17 @@
 add_library(state_db
-  state_db.cpp
-  state_delta.cpp
-  merge_iterator.cpp
-  backends/backend.cpp
-  backends/iterator.cpp
-  backends/map/map_backend.cpp
-  backends/map/map_iterator.cpp
-  backends/rocksdb/rocksdb_backend.cpp
-  backends/rocksdb/rocksdb_iterator.cpp
-  backends/rocksdb/object_cache.cpp
+  koinos/state_db/state_db.cpp
+  koinos/state_db/state_delta.cpp
+  koinos/state_db/merge_iterator.cpp
+  koinos/state_db/backends/backend.cpp
+  koinos/state_db/backends/iterator.cpp
+  koinos/state_db/backends/map/map_backend.cpp
+  koinos/state_db/backends/map/map_iterator.cpp
+  koinos/state_db/backends/rocksdb/rocksdb_backend.cpp
+  koinos/state_db/backends/rocksdb/rocksdb_iterator.cpp
+  koinos/state_db/backends/rocksdb/object_cache.cpp
 
-  merge_iterator.hpp
-  state_delta.hpp
+  koinos/state_db/merge_iterator.hpp
+  koinos/state_db/state_delta.hpp
 
   ${PROJECT_SOURCE_DIR}/include/koinos/state_db/state_db_types.hpp
   ${PROJECT_SOURCE_DIR}/include/koinos/state_db/state_db.hpp
@@ -41,6 +41,8 @@ target_include_directories(
     PUBLIC
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
       $<INSTALL_INTERFACE:include>
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src
 )
 
 add_library(Koinos::state_db ALIAS state_db)

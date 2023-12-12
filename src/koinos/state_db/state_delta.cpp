@@ -1,4 +1,4 @@
-#include "state_delta.hpp"
+#include <koinos/state_db/state_delta.hpp>
 
 #include <koinos/crypto/merkle_tree.hpp>
 

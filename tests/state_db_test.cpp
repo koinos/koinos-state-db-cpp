@@ -1,8 +1,5 @@
 #include <boost/test/unit_test.hpp>
 
-#include "merge_iterator.hpp"
-#include "state_delta.hpp"
-
 #include <koinos/bigint.hpp>
 #include <koinos/crypto/merkle_tree.hpp>
 #include <koinos/crypto/multihash.hpp>
@@ -10,7 +7,9 @@
 #include <koinos/exception.hpp>
 #include <koinos/state_db/backends/map/map_backend.hpp>
 #include <koinos/state_db/backends/rocksdb/rocksdb_backend.hpp>
+#include <koinos/state_db/merge_iterator.hpp>
 #include <koinos/state_db/state_db.hpp>
+#include <koinos/state_db/state_delta.hpp>
 #include <koinos/util/conversion.hpp>
 #include <koinos/util/random.hpp>
 #include <koinos/util/hex.hpp>
