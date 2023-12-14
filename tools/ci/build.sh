@@ -12,6 +12,7 @@ if [ "$RUN_TYPE" = "test" ]; then
 elif [ "$RUN_TYPE" = "coverage" ]; then
    cmake -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=ON ..
    cmake --build . --config Debug --parallel 3 --target coverage
+   lcov --version
 elif [ "$RUN_TYPE" = "static-analysis" ]; then
    cmake -DCMAKE_BUILD_TYPE=Debug -DSTATIC_ANALYSIS=ON ..
    cmake --build . --config Debug --parallel 3

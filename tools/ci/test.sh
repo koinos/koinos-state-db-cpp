@@ -11,5 +11,5 @@ if [ "$RUN_TYPE" = "test" ]; then
    exec ctest -j3 --output-on-failure
 elif [ "$RUN_TYPE" = "coverage" ]; then
    cd $TRAVIS_BUILD_DIR/build/tests
-   exec valgrind --error-exitcode=1 --leak-check=yes ./koinos_state_db_tests
+   exec valgrind --error-exitcode=1 --leak-check=yes ./state_db_tests
 fi
