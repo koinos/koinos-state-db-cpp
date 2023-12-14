@@ -42,10 +42,7 @@ target_include_directories(
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
       $<INSTALL_INTERFACE:include>
     PRIVATE
-      ${PROJECT_SOURCE_DIR}/src
-)
-
-add_library(Koinos::state_db ALIAS state_db)
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
 koinos_install(TARGETS state_db)
 
@@ -53,5 +50,4 @@ install(
   DIRECTORY
     ${PROJECT_SOURCE_DIR}/include
   DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
-)
+    ${CMAKE_INSTALL_PREFIX})

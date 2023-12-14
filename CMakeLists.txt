@@ -16,8 +16,7 @@ include(FetchContent)
 FetchContent_Declare(
   koinos_cmake
   GIT_REPOSITORY https://github.com/koinos/koinos-cmake.git
-  GIT_TAG        4967f0548e3f4f555ac95494413f30ac9d0ced4d
-)
+  GIT_TAG        65e4239b4634887778c6c662d1b7cb8f0ed0cacc)
 FetchContent_MakeAvailable(koinos_cmake)
 
 include("${koinos_cmake_SOURCE_DIR}/Koinos.cmake")
@@ -30,8 +29,8 @@ project(koinos_state_db
 koinos_define_version()
 
 koinos_add_package(Boost CONFIG REQUIRED
-  ADD_COMPONENTS log exception test
-  FIND_COMPONENTS log log_setup
+  ADD_COMPONENTS log exception program_options test
+  FIND_COMPONENTS log log_setup exception program_options
 )
 
 koinos_add_package(rocksdb NAME RocksDB CONFIG REQUIRED)
