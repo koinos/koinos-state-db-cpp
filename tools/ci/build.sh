@@ -4,7 +4,7 @@ set -e
 set -x
 
 mkdir build
-cd build
+pushd build
 
 if [ "$RUN_TYPE" = "test" ]; then
    cmake -DCMAKE_BUILD_TYPE=Release ..
