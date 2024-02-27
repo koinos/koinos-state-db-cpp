@@ -18,7 +18,7 @@ addons:
 
 jobs:
   include:
-        - name: "Static Analysis"
+    - name: "Static Analysis"
       os: linux
       dist: jammy
       env:
