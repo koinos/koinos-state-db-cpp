@@ -6,15 +6,12 @@ This library implements StateDB, a fork aware persistent database, for the Koino
 
 This project's structure follows the [Pitchfork](https://api.csswg.org/bikeshed/?force=1&url=https://raw.githubusercontent.com/vector-of-bool/pitchfork/develop/data/spec.bs) specification.
 
-**`build`**: An ephemeral directory for building the project. Not checked in, but excluded via `.gitignore`.
-
-**`include`**: Contains all public headers for the Koinos StateDB.
-
-**`src`**: Contains all source code and private headers for Koinos StateDB.
-
-**`tests`**: Contains tests for Koinos StateDB.
-
-**`tools`**: Contains additional tooling for Koinos StateDB, primarily CI scripts.
+```
+├── build/   # An ephemeral directory for building the project. Not checked in, but excluded via .gitignore.
+├── include/ # Contains all public headers for the Koinos StateDB.
+├── src/     # Contains all source code and private headers for Koinos StateDB.
+└── tests/   # Contains tests for Koinos StateDB.
+```
 
 ### Building
 
@@ -35,17 +32,17 @@ cmake -D CMAKE_BUILD_TYPE=Debug -D STATIC_ANALYSIS=ON ..
 
 ### Testing
 
-Tests are built by default as target `koinos_state_db_tests`. You can building them specifically with:
+Tests are built by default as target `state_db_tests`. You can building them specifically with:
 
 ```
-cmake --build . --config Release --parallel --target koinos_state_db_tests
+cmake --build . --config Release --parallel --target state_db_tests
 ```
 
 Tests can be invoked from the tests directiory within the build directory.
 
 ```
 cd tests
-./koinos_state_db_tests
+./state_db_tests
 ```
 
 Tests can also be ran in parallel using CTest.
@@ -60,6 +57,15 @@ You can also generate a coverage report.
 ```
 cmake -D CMAKE_BUILD_TYPE=Debug -D COVERAGE=ON ..
 cmake --build . --config Debug --parallel 3 --target coverage
+```
+
+You can run tests in different sanitizer profiles. Those profiles are None (Default), Address, Stack, and Thread. Currently, these are only known to work with clang, but may work with gcc with additional environment configuration.
+
+```
+cmake -D CMAKE_BUILD_TYPE=Debug -D SANITIZER=Address ..
+cmake --build . --config Debug --parallel --target state_db_tests
+cd tests
+ctest -j
 ```
 
 ### Formatting
