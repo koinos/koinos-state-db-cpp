@@ -30,7 +30,7 @@ koinos_add_package(ethash CONFIG REQUIRED)
 koinos_add_package(libsecp256k1-vrf CONFIG REQUIRED)
 koinos_add_package(nlohmann_json CONFIG REQUIRED)
 koinos_add_package(OpenSSL REQUIRED)
-koinos_add_package(yaml-cpp)
+koinos_add_package(yaml-cpp CONFIG REQUIRED)
 koinos_add_package(gRPC CONFIG REQUIRED)
 
 koinos_add_package(koinos_proto CONFIG REQUIRED)
