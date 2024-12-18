@@ -6,6 +6,16 @@ abstract_backend::abstract_backend():
     _id( crypto::multihash::zero( crypto::multicodec::sha2_256 ) )
 {}
 
+abstract_backend::reverse_iterator abstract_backend::rbegin()
+{
+  return reverse_iterator( end() );
+}
+
+abstract_backend::reverse_iterator abstract_backend::rend()
+{
+  return reverse_iterator( begin() );
+}
+
 bool abstract_backend::empty() const
 {
   return size() == 0;

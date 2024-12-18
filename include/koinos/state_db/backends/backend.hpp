@@ -10,15 +10,19 @@ namespace koinos::state_db::backends {
 class abstract_backend
 {
 public:
-  using key_type   = detail::key_type;
-  using value_type = detail::value_type;
-  using size_type  = detail::size_type;
+  using key_type         = detail::key_type;
+  using value_type       = detail::value_type;
+  using size_type        = detail::size_type;
+  using reverse_iterator = std::reverse_iterator< iterator >;
 
   abstract_backend();
   virtual ~abstract_backend(){};
 
   virtual iterator begin() = 0;
   virtual iterator end()   = 0;
+
+  virtual reverse_iterator rbegin();
+  virtual reverse_iterator rend();
 
   virtual void put( const key_type& k, const value_type& v ) = 0;
   virtual const value_type* get( const key_type& ) const     = 0;

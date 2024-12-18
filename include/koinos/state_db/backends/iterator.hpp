@@ -2,6 +2,7 @@
 
 #include <koinos/state_db/backends/types.hpp>
 
+#include <iterator>
 #include <memory>
 
 namespace koinos::state_db::backends {
@@ -60,3 +61,15 @@ private:
 };
 
 } // namespace koinos::state_db::backends
+
+namespace std {
+  template<>
+  struct iterator_traits< koinos::state_db::backends::iterator >
+  {
+    using iterator_category = bidirectional_iterator_tag;
+    using value_type        = koinos::state_db::backends::iterator::value_type;
+    using pointer           = value_type*;
+    using reference         = value_type&;
+    using difference_type   = std::ptrdiff_t;
+  };
+} // std
