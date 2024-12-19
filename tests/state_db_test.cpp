@@ -1916,4 +1916,313 @@ BOOST_AUTO_TEST_CASE( get_all_nodes )
   KOINOS_CATCH_LOG_AND_RETHROW( info )
 }
 
+template< typename Reference, typename ReferenceValues, typename Test, typename Initializer >
+void test_container_iterators( Reference& reference, ReferenceValues& reference_values, Test& test, Initializer&& init )
+{
+  // Test to end, to begin, and to end
+  auto ref_itr = init( reference );
+  auto test_itr = init( test );
+
+  if( ref_itr == reference.end() )
+    BOOST_REQUIRE( test_itr == test.end() );
+  else
+  {
+    BOOST_REQUIRE( test_itr != test.end() );
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+
+  // Test to begin, to end, and to begin
+  ref_itr = init( reference );
+  test_itr = init( test );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+
+
+  // Test zig zag up (2 forward, 1 back)
+  ref_itr = init( reference );
+  test_itr = init( test );
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+    {
+      BOOST_CHECK( test_itr == test.end() );
+      break;
+    }
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+
+  // Test zig zag down (2 back, 1 forward)
+  ref_itr = init( reference );
+  test_itr = init( test );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+
+    if( ref_itr == reference.begin() )
+      break;
+
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+}
+
+BOOST_AUTO_TEST_CASE( complex_merge_iterator )
+{
+  try
+  {
+    std::filesystem::path temp = std::filesystem::temp_directory_path() / koinos::util::random_alphanumeric( 8 );
+    std::filesystem::create_directory( temp );
+
+    using state_delta_ptr = std::shared_ptr< state_delta >;
+    std::deque< state_delta_ptr > delta_queue;
+    delta_queue.emplace_back( std::make_shared< state_delta >( temp ) );
+
+    /*
+    This is the test case, using the notation in docs/merge_iterator.md
+
+    1: |a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|
+    2: |c|d|g|h|j|n|                    RM: b, f
+    3: |b|d|e|k|o|                      RM: g, j, m
+    4: |a|b|f|j|                        RM: c, o
+    5: |b|d|i|                          RM: j
+
+    The ordered keys are:
+    a, b, d, e, f, h, i, k, l ,n
+
+    The ordered values are:
+    a4, b5, d5, e3, f4, h2, i5, k3, l1, n2
+    */
+
+    std::set< std::string > reference = { "a", "b", "d", "e", "f", "h", "i", "k", "l", "n" };
+    std::map< std::string, std::string > reference_values {
+      { "a", "a4" },
+      { "b", "b5" },
+      { "d", "d5" },
+      { "e", "e3" },
+      { "f", "f4" },
+      { "h", "h2" },
+      { "i", "i5" },
+      { "k", "k3" },
+      { "l", "l1" },
+      { "n", "n2" }
+    };
+
+    for (char c = 'a'; c <= 'o'; c++ )
+    {
+      std::string key( 1, c );
+      delta_queue.back()->put( key, key + "1" );
+    }
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "c", "c2" );
+    delta_queue.back()->put( "d", "d2" );
+    delta_queue.back()->put( "g", "g2" );
+    delta_queue.back()->put( "h", "h2" );
+    delta_queue.back()->put( "j", "j2" );
+    delta_queue.back()->put( "n", "n2" );
+    delta_queue.back()->erase( "b" );
+    delta_queue.back()->erase( "f" );
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "b", "b3" );
+    delta_queue.back()->put( "d", "d3" );
+    delta_queue.back()->put( "e", "e3" );
+    delta_queue.back()->put( "k", "k3" );
+    delta_queue.back()->put( "o", "o3" );
+    delta_queue.back()->erase( "g" );
+    delta_queue.back()->erase( "j" );
+    delta_queue.back()->erase( "m" );
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "a", "a4" );
+    delta_queue.back()->put( "b", "b4" );
+    delta_queue.back()->put( "f", "f4" );
+    delta_queue.back()->put( "j", "j4" );
+    delta_queue.back()->erase( "c" );
+    delta_queue.back()->erase( "o" );
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "b", "b5" );
+    delta_queue.back()->put( "d", "d5" );
+    delta_queue.back()->put( "i", "i5" );
+    delta_queue.back()->erase( "j" );
+
+    merge_state m_state( delta_queue.back() );
+
+    test_container_iterators( reference, reference_values, m_state, []( auto& m_state )
+                                                                    {
+                                                                      return m_state.begin();
+                                                                    } );
+
+    test_container_iterators( reference, reference_values, m_state, []( auto& m_state )
+                                                                    {
+                                                                      return m_state.end();
+                                                                    } );
+
+
+    for (char c = 'a'; c <= 'o'; c++ )
+    {
+      std::string key( 1, c );
+
+      test_container_iterators( reference, reference_values, m_state, [&]( auto& m_state )
+                                                                      {
+                                                                        return m_state.lower_bound( key );
+                                                                      } );
+      /*
+      test_container_iterators( reference, reference_values, m_state, [&]( merge_state& m_state )
+                                                                      {
+                                                                        return m_state.upper_bound( key );
+                                                                      } );
+      */
+    }
+  }
+  KOINOS_CATCH_LOG_AND_RETHROW( info )
+}
+
 BOOST_AUTO_TEST_SUITE_END()
