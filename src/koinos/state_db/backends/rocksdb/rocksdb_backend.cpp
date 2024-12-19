@@ -388,6 +388,24 @@ iterator rocksdb_backend::lower_bound( const key_type& k )
   return iterator( std::unique_ptr< abstract_iterator >( std::move( itr ) ) );
 }
 
+iterator rocksdb_backend::upper_bound( const key_type& k )
+{
+  KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );
+
+  auto itr   = std::make_unique< rocksdb_iterator >( _db, _handles[ constants::objects_column_index ], _ropts, _cache );
+  itr->_iter = std::unique_ptr< ::rocksdb::Iterator >(
+    _db->NewIterator( *_ropts, &*_handles[ constants::objects_column_index ] ) );
+
+  itr->_iter->SeekForPrev( ::rocksdb::Slice( k ) );
+
+  // SeekForPrev is a less than or equal upper_bound while the std::upper_bound is strictly less than.
+  // We need to check for the equality case and increment the iterator.
+  if( itr->_iter->Valid() )
+    itr->_iter->Next();
+
+  return iterator( std::unique_ptr< abstract_iterator >( std::move( itr ) ) );
+}
+
 void rocksdb_backend::load_metadata()
 {
   KOINOS_ASSERT( _db, rocksdb_database_not_open_exception, "database not open" );

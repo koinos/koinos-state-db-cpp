@@ -45,6 +45,7 @@ public:
   // Lookup
   virtual iterator find( const key_type& k ) override;
   virtual iterator lower_bound( const key_type& k ) override;
+  virtual iterator upper_bound( const key_type& k ) override;
 
   virtual void store_metadata() override;
 

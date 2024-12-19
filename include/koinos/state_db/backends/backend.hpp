@@ -34,6 +34,7 @@ public:
 
   virtual iterator find( const key_type& k )        = 0;
   virtual iterator lower_bound( const key_type& k ) = 0;
+  virtual iterator upper_bound( const key_type& k ) = 0;
 
   size_type revision() const;
   void set_revision( size_type );
