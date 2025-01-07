@@ -2225,4 +2225,151 @@ BOOST_AUTO_TEST_CASE( complex_merge_iterator )
   KOINOS_CATCH_LOG_AND_RETHROW( info )
 }
 
+BOOST_AUTO_TEST_CASE( next_and_prev_objects )
+{
+  try
+  {
+    BOOST_TEST_MESSAGE( "Create state nodes" );
+
+    auto shared_db_lock = db.get_shared_lock();
+    auto root_id        = db.get_root( shared_db_lock )->id();
+    object_space space;
+
+    crypto::multihash state_1_id = crypto::hash( crypto::multicodec::sha2_256, 0x01 );
+    auto state_1 = db.create_writable_node( root_id, state_1_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_1 );
+
+    std::string a1_val = "a1", b1_val = "b1", c1_val = "c1", d1_val = "d1", e1_val = "e1", f1_val = "f1",
+                g1_val = "g1", h1_val = "h1", i1_val = "i1", j1_val = "j1", k1_val = "k1", l1_val = "l1",
+                m1_val = "m1", n1_val = "n1", o1_val = "o1";
+
+    state_1->put_object( space, "a", &a1_val );
+    state_1->put_object( space, "b", &b1_val );
+    state_1->put_object( space, "c", &c1_val );
+    state_1->put_object( space, "d", &d1_val );
+    state_1->put_object( space, "e", &e1_val );
+    state_1->put_object( space, "f", &f1_val );
+    state_1->put_object( space, "g", &g1_val );
+    state_1->put_object( space, "h", &h1_val );
+    state_1->put_object( space, "i", &i1_val );
+    state_1->put_object( space, "j", &j1_val );
+    state_1->put_object( space, "k", &k1_val );
+    state_1->put_object( space, "l", &l1_val );
+    state_1->put_object( space, "m", &m1_val );
+    state_1->put_object( space, "n", &n1_val );
+    state_1->put_object( space, "o", &o1_val );
+
+    db.finalize_node( state_1_id, shared_db_lock );
+
+    crypto::multihash state_2_id = crypto::hash( crypto::multicodec::sha2_256, 0x02 );
+    auto state_2 = db.create_writable_node( state_1_id, state_2_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_2 );
+
+    std::string c2_val = "c2", d2_val = "d2", g2_val = "g2", h2_val = "h2", j2_val = "j2", n2_val = "n2";
+
+    state_2->put_object( space, "c", &c2_val );
+    state_2->put_object( space, "d", &d2_val );
+    state_2->put_object( space, "g", &g2_val );
+    state_2->put_object( space, "h", &h2_val );
+    state_2->put_object( space, "j", &j2_val );
+    state_2->put_object( space, "n", &n2_val );
+    state_2->remove_object( space, "b" );
+    state_2->remove_object( space, "f" );
+
+    db.finalize_node( state_2_id, shared_db_lock );
+
+    crypto::multihash state_3_id = crypto::hash( crypto::multicodec::sha2_256, 0x03 );
+    auto state_3 = db.create_writable_node( state_2_id, state_3_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_3 );
+
+    std::string b3_val = "b3", d3_val = "d3", e3_val = "e3", k3_val = "k3", o3_val = "o3";
+
+    state_3->put_object( space, "b", &b3_val );
+    state_3->put_object( space, "d", &d3_val );
+    state_3->put_object( space, "e", &e3_val );
+    state_3->put_object( space, "k", &k3_val );
+    state_3->put_object( space, "o", &o3_val );
+    state_3->remove_object( space, "g" );
+    state_3->remove_object( space, "j" );
+    state_3->remove_object( space, "m" );
+
+    db.finalize_node( state_3_id, shared_db_lock );
+
+    crypto::multihash state_4_id = crypto::hash( crypto::multicodec::sha2_256, 0x04 );
+    auto state_4 = db.create_writable_node( state_3_id, state_4_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_4 );
+
+    std::string a4_val = "a4", b4_val = "b4", f4_val = "f4", j4_val = "j4";
+
+    state_4->put_object( space, "a", &a4_val );
+    state_4->put_object( space, "b", &b4_val );
+    state_4->put_object( space, "f", &f4_val );
+    state_4->put_object( space, "j", &j4_val );
+    state_4->remove_object( space, "c" );
+    state_4->remove_object( space, "o" );
+
+    db.finalize_node( state_4_id, shared_db_lock );
+
+    crypto::multihash state_5_id = crypto::hash( crypto::multicodec::sha2_256, 0x05 );
+    auto state_5 = db.create_writable_node( state_4_id, state_5_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_5 );
+
+    std::string b5_val = "b5", d5_val = "d5", i5_val = "i5";
+    state_5->put_object( space, "b", &b5_val );
+    state_5->put_object( space, "d", &d5_val );
+    state_5->put_object( space, "i", &i5_val );
+    state_5->remove_object( space, "j" );
+
+    db.finalize_node( state_5_id, shared_db_lock );
+
+    std::map< std::string, std::string > reference_values {
+      { "a", "a4" },
+      { "b", "b5" },
+      { "d", "d5" },
+      { "e", "e3" },
+      { "f", "f4" },
+      { "h", "h2" },
+      { "i", "i5" },
+      { "k", "k3" },
+      { "l", "l1" },
+      { "n", "n2" }
+    };
+
+    std::string key = "";
+
+    for( auto itr = reference_values.begin(); itr != reference_values.end(); ++itr )
+    {
+      auto [next_value, next_key] = state_5->get_next_object( space, key );
+
+      BOOST_REQUIRE(next_value);
+      BOOST_CHECK_EQUAL( *next_value, itr->second );
+      BOOST_CHECK_EQUAL( next_key, itr->first );
+
+      key = itr->first;
+    }
+
+    auto [next_value, next_key] = state_5->get_next_object( space, "n" );
+    BOOST_CHECK(!next_value);
+    BOOST_CHECK_EQUAL( next_key, "" );
+
+    key = "z";
+    for( auto itr = reference_values.rbegin(); itr != reference_values.rend(); ++itr )
+    {
+      auto [prev_value, prev_key] = state_5->get_prev_object( space, key );
+
+      BOOST_REQUIRE(prev_value);
+      BOOST_CHECK_EQUAL( *prev_value, itr->second );
+      BOOST_CHECK_EQUAL( prev_key, itr->first );
+
+      key = itr->first;
+    }
+
+    auto [prev_value, prev_key] = state_5->get_prev_object( space, key );
+
+    BOOST_CHECK(!prev_value);
+    BOOST_CHECK_EQUAL( prev_key, "" );
+  }
+  KOINOS_CATCH_LOG_AND_RETHROW( info )
+}
+
 BOOST_AUTO_TEST_SUITE_END()
