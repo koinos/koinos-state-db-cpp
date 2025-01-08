@@ -1,7 +1,5 @@
 #include <koinos/state_db/merge_iterator.hpp>
 
-#include <koinos/util/hex.hpp>
-
 namespace koinos::state_db::detail {
 
 iterator_wrapper::iterator_wrapper( backends::iterator&& i,
@@ -117,9 +115,7 @@ merge_iterator& merge_iterator::operator--()
   std::optional< key_type > head_key;
 
   if( head_itr->valid() )
-  {
     head_key = head_itr->itr.key();
-  }
 
   /* We are grabbing the current head value.
    * Then iterate over all other iterators and rewind them until they have a value less
@@ -135,7 +131,7 @@ merge_iterator& merge_iterator::operator--()
 
       if( !head_key )
       {
-        // If there was no valid key, then bring back each iterator once, it is gauranteed to be less than the
+        // If there was no valid key, then bring back each iterator once, it is guaranteed to be less than the
         // current value (end()).
         _itr_revision_index.modify( _itr_revision_index.iterator_to( *rev_itr ),
                                     [ & ]( iterator_wrapper& i )
@@ -194,33 +190,32 @@ merge_iterator& merge_iterator::operator--()
     // This next bit works in two modes.
     // Some indices may not have had a value less than the previous head, so they will show up first,
     // we need to increment through those values until we get the the new valid least value.
-    if( head_key )
-    {
+    // We also could have dirty values show up first, so we need to get past those as well.
       while( least_itr != rev_order_idx.end() && least_itr->valid()
-             && ( is_dirty( least_itr ) || least_itr->itr.key() >= *head_key ) )
+             && ( is_dirty( least_itr ) || ( head_key && least_itr->itr.key() >= *head_key ) ) )
       {
         ++least_itr;
       }
-    }
 
     // Now least_itr points to the new least value, unless it is end()
     if( least_itr != rev_order_idx.end() )
     {
-      ++least_itr;
-    }
+      const auto& least_key = least_itr->itr.key();
 
-    // Now least_itr points to the next value. All of these are too much less, but are guaranteed to be valid.
-    // All values in this indices one past are gauranteed to be greater than the new least, or invalid by
-    // modification. We can increment all of them once, and then call resolve_conflicts for the new least value
-    // to become the head.
-    while( least_itr != rev_order_idx.end() && least_itr->valid() )
-    {
-      _itr_revision_index.modify( _itr_revision_index.iterator_to( *( least_itr-- ) ),
+      // At this point every value is either end or less than or equal to the new value.
+      // We need to loop through each of the other iterators and increment them past this value.
+      auto& forward_idx = _itr_revision_index.template get< by_order_revision >();
+      auto forward_itr = forward_idx.begin();
+
+      while( forward_itr != forward_idx.end() && forward_itr->itr.key() < least_key )
+      {
+        _itr_revision_index.modify( _itr_revision_index.iterator_to( *forward_itr ),
                                   []( iterator_wrapper& i )
                                   {
                                     ++( i.itr );
                                   } );
-      ++least_itr;
+        forward_itr = forward_idx.begin();
+      }
     }
 
     resolve_conflicts();
@@ -306,20 +301,7 @@ merge_iterator merge_state::lower_bound( const key_type& key ) const
   return merge_iterator( _head,
                          [ & ]( std::shared_ptr< backends::abstract_backend > backend )
                          {
-                           LOG(info) << "Backend Data: ";
-                           for ( auto itr = backend->begin(); itr != backend->end(); ++itr )
-                            LOG(info) << util::to_hex( itr.key() ) << " - " << util::to_hex( *itr );
-
-                           LOG(info) << "Lower Bound: " << util::to_hex( key );
-                           auto itr = backend->lower_bound( key );
-                           if ( itr == backend->end() ) {
-                            LOG(info) << "END";
-                           }
-                           else {
-                            LOG(info) << util::to_hex( itr.key() ) << " - " << util::to_hex( *itr );
-                           }
-
-                           return itr;
+                           return backend->lower_bound( key );
                          } );
 }
 

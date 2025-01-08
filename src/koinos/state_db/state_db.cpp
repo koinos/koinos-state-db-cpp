@@ -5,7 +5,6 @@
 #include <koinos/state_db/state_db.hpp>
 #include <koinos/state_db/state_delta.hpp>
 #include <koinos/util/conversion.hpp>
-#include <koinos/util/hex.hpp>
 
 #include <condition_variable>
 #include <cstring>
@@ -1047,19 +1046,8 @@ std::pair< const object_value*, const object_key > state_node_impl::get_prev_obj
   db_key.set_key( key );
   auto key_string = util::converter::as< std::string >( db_key );
 
-  LOG(info) << util::to_hex( key_string );
-
   auto state = merge_state( _state );
   auto it    = state.lower_bound( key_string );
-
-  if( it != state.end() )
-  {
-    LOG(info) << util::to_hex( it.key() );
-  }
-  else
-  {
-    LOG(info) << "it at end";
-  }
 
   if( it != state.begin() )
   {

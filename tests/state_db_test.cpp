@@ -11,7 +11,6 @@
 #include <koinos/state_db/state_db.hpp>
 #include <koinos/state_db/state_delta.hpp>
 #include <koinos/util/conversion.hpp>
-#include <koinos/util/hex.hpp>
 #include <koinos/util/random.hpp>
 
 #include <deque>
@@ -2243,12 +2242,9 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
                 g1_val = "g1", h1_val = "h1", i1_val = "i1", j1_val = "j1", k1_val = "k1", l1_val = "l1",
                 m1_val = "m1", n1_val = "n1", o1_val = "o1";
 
-    // Add buffer objects surrounding the space
+    // Add buffer objects before the space
     space.set_id( 1 );
     state_1->put_object( space, "a", &a1_val );
-
-    //space.set_id( 3 );
-    //state_1->put_object( space, "a", &a1_val );
 
     space.set_id( 2 );
     state_1->put_object( space, "a", &a1_val );
