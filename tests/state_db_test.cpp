@@ -2243,6 +2243,14 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
                 g1_val = "g1", h1_val = "h1", i1_val = "i1", j1_val = "j1", k1_val = "k1", l1_val = "l1",
                 m1_val = "m1", n1_val = "n1", o1_val = "o1";
 
+    // Add buffer objects surrounding the space
+    space.set_id( 1 );
+    state_1->put_object( space, "a", &a1_val );
+
+    space.set_id( 3 );
+    state_1->put_object( space, "a", &a1_val );
+
+    space.set_id( 2 );
     state_1->put_object( space, "a", &a1_val );
     state_1->put_object( space, "b", &b1_val );
     state_1->put_object( space, "c", &c1_val );
@@ -2364,10 +2372,36 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
       key = itr->first;
     }
 
-    auto [prev_value, prev_key] = state_5->get_prev_object( space, key );
+    {
+      auto [prev_value, prev_key] = state_5->get_prev_object( space, key );
 
-    BOOST_CHECK(!prev_value);
-    BOOST_CHECK_EQUAL( prev_key, "" );
+      BOOST_CHECK(!prev_value);
+      BOOST_CHECK_EQUAL( prev_key, "" );
+    }
+
+    crypto::multihash state_6_id = crypto::hash( crypto::multicodec::sha2_256, 0x06 );
+    auto state_6 = db.create_writable_node( state_5_id, state_6_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_6 );
+
+    state_6->remove_object( space, "a" );
+    state_6->remove_object( space, "b" );
+    state_6->remove_object( space, "d" );
+    state_6->remove_object( space, "e" );
+    state_6->remove_object( space, "f" );
+    state_6->remove_object( space, "h" );
+    state_6->remove_object( space, "i" );
+    state_6->remove_object( space, "k" );
+    state_6->remove_object( space, "l" );
+    state_6->remove_object( space, "n" );
+
+    db.finalize_node( state_6_id, shared_db_lock );
+
+    {
+      auto [prev_value, prev_key] = state_6->get_prev_object( space, "z" );
+
+      BOOST_CHECK( !prev_value );
+      BOOST_CHECK_EQUAL( prev_key, "" );
+    }
   }
   KOINOS_CATCH_LOG_AND_RETHROW( info )
 }
