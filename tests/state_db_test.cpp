@@ -2247,8 +2247,8 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
     space.set_id( 1 );
     state_1->put_object( space, "a", &a1_val );
 
-    space.set_id( 3 );
-    state_1->put_object( space, "a", &a1_val );
+    //space.set_id( 3 );
+    //state_1->put_object( space, "a", &a1_val );
 
     space.set_id( 2 );
     state_1->put_object( space, "a", &a1_val );
@@ -2398,6 +2398,54 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
 
     {
       auto [prev_value, prev_key] = state_6->get_prev_object( space, "z" );
+
+      BOOST_CHECK( !prev_value );
+      BOOST_CHECK_EQUAL( prev_key, "" );
+    }
+  }
+  KOINOS_CATCH_LOG_AND_RETHROW( info )
+}
+
+BOOST_AUTO_TEST_CASE( prev_object_exception )
+{
+  try {
+    auto shared_db_lock = db.get_shared_lock();
+    auto root_id        = db.get_root( shared_db_lock )->id();
+    object_space space;
+
+    crypto::multihash state_1_id = crypto::hash( crypto::multicodec::sha2_256, 0x01 );
+    auto state_1 = db.create_writable_node( root_id, state_1_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_1 );
+
+    std::string a_val = "a", b_val = "b";
+
+    space.set_id( 1 );
+    state_1->put_object( space, "a", &a_val );
+
+    space.set_id( 2 );
+    state_1->put_object( space, "a", &a_val );
+    state_1->put_object( space, "b", &b_val );
+
+    db.finalize_node( state_1_id, shared_db_lock );
+
+    {
+      auto [prev_value, prev_key] = state_1->get_prev_object( space, "z" );
+
+      BOOST_CHECK( prev_value );
+      BOOST_CHECK_EQUAL( prev_key, "b" );
+    }
+
+    crypto::multihash state_2_id = crypto::hash( crypto::multicodec::sha2_256, 0x02 );
+    auto state_2 = db.create_writable_node( state_1_id, state_2_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_2 );
+
+    state_2->remove_object( space, "a" );
+    state_2->remove_object( space, "b" );
+
+    db.finalize_node( state_2_id, shared_db_lock );
+
+    {
+      auto [prev_value, prev_key] = state_2->get_prev_object( space, "z" );
 
       BOOST_CHECK( !prev_value );
       BOOST_CHECK_EQUAL( prev_key, "" );

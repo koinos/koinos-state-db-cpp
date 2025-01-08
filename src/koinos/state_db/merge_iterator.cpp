@@ -1,5 +1,7 @@
 #include <koinos/state_db/merge_iterator.hpp>
 
+#include <koinos/util/hex.hpp>
+
 namespace koinos::state_db::detail {
 
 iterator_wrapper::iterator_wrapper( backends::iterator&& i,
@@ -304,7 +306,20 @@ merge_iterator merge_state::lower_bound( const key_type& key ) const
   return merge_iterator( _head,
                          [ & ]( std::shared_ptr< backends::abstract_backend > backend )
                          {
-                           return backend->lower_bound( key );
+                           LOG(info) << "Backend Data: ";
+                           for ( auto itr = backend->begin(); itr != backend->end(); ++itr )
+                            LOG(info) << util::to_hex( itr.key() ) << " - " << util::to_hex( *itr );
+
+                           LOG(info) << "Lower Bound: " << util::to_hex( key );
+                           auto itr = backend->lower_bound( key );
+                           if ( itr == backend->end() ) {
+                            LOG(info) << "END";
+                           }
+                           else {
+                            LOG(info) << util::to_hex( itr.key() ) << " - " << util::to_hex( *itr );
+                           }
+
+                           return itr;
                          } );
 }
 
