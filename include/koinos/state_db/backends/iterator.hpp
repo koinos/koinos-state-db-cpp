@@ -14,7 +14,7 @@ public:
   using key_type   = detail::key_type;
   using value_type = detail::value_type;
 
-  virtual ~abstract_iterator(){};
+  virtual ~abstract_iterator() {};
 
   virtual const value_type& operator*() const = 0;
 

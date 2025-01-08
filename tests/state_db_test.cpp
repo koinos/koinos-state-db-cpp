@@ -49,11 +49,7 @@ struct state_db_fixture
     temp = std::filesystem::temp_directory_path() / util::random_alphanumeric( 8 );
     std::filesystem::create_directory( temp );
 
-    db.open(
-      temp,
-      [ & ]( state_db::state_node_ptr root ) {},
-      fork_resolution_algorithm::fifo,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_db::state_node_ptr root ) {}, fork_resolution_algorithm::fifo, db.get_unique_lock() );
   }
 
   ~state_db_fixture()
@@ -621,11 +617,7 @@ BOOST_AUTO_TEST_CASE( reset_test )
     BOOST_CHECK_THROW( db.commit_node( crypto::hash( crypto::multicodec::sha2_256, 1 ), db.get_unique_lock() ),
                        koinos::exception );
 
-    db.open(
-      temp,
-      []( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, []( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
 
@@ -657,11 +649,7 @@ BOOST_AUTO_TEST_CASE( reset_test )
     shared_db_lock.reset();
     state_1.reset();
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      []( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, []( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     // State node was committed and should exist on open
     shared_db_lock = db.get_shared_lock();
@@ -1250,11 +1238,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     BOOST_TEST_MESSAGE( "Test block time fork resolution" );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::block_time_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::block_time_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     header.set_timestamp( 100 );
@@ -1306,11 +1290,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     BOOST_TEST_MESSAGE( "Test pob fork resolution" );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     std::string signer1 = "signer1";
@@ -1375,11 +1355,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     state_5.reset();
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     // BEGIN: Create two forks, then double produce on the newer fork
@@ -1483,11 +1459,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     state_5.reset();
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     // BEGIN: Create two forks, then double produce on the older fork
@@ -1580,11 +1552,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     state_5.reset();
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     // BEGIN: Edge case when double production is the first block
@@ -1679,11 +1647,7 @@ BOOST_AUTO_TEST_CASE( restart_cache )
     db.commit_node( state_id, db.get_unique_lock() );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     state_1 = db.get_root( shared_db_lock );
@@ -1733,11 +1697,7 @@ BOOST_AUTO_TEST_CASE( persistence )
     db.commit_node( state_id, db.get_unique_lock() );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
     state_1        = db.get_node( state_id, shared_db_lock );
@@ -1752,11 +1712,7 @@ BOOST_AUTO_TEST_CASE( persistence )
     db.close( db.get_unique_lock() );
 
     BOOST_TEST_MESSAGE( "Checking transience when backed by std::map" );
-    db.open(
-      {},
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( {}, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
     state_1        = db.create_writable_node( db.get_head( shared_db_lock )->id(),
@@ -1776,11 +1732,7 @@ BOOST_AUTO_TEST_CASE( persistence )
     db.commit_node( state_id, db.get_unique_lock() );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      {},
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( {}, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
     state_1        = db.get_node( state_id, shared_db_lock );
@@ -1919,7 +1871,7 @@ template< typename Reference, typename ReferenceValues, typename Test, typename 
 void test_container_iterators( Reference& reference, ReferenceValues& reference_values, Test& test, Initializer&& init )
 {
   // Test to end, to begin, and to end
-  auto ref_itr = init( reference );
+  auto ref_itr  = init( reference );
   auto test_itr = init( test );
 
   if( ref_itr == reference.end() )
@@ -1978,9 +1930,8 @@ void test_container_iterators( Reference& reference, ReferenceValues& reference_
 
   BOOST_CHECK( test_itr == test.end() );
 
-
   // Test to begin, to end, and to begin
-  ref_itr = init( reference );
+  ref_itr  = init( reference );
   test_itr = init( test );
 
   while( ref_itr != reference.begin() )
@@ -2026,9 +1977,8 @@ void test_container_iterators( Reference& reference, ReferenceValues& reference_
 
   BOOST_CHECK( test_itr == test.begin() );
 
-
   // Test zig zag up (2 forward, 1 back)
-  ref_itr = init( reference );
+  ref_itr  = init( reference );
   test_itr = init( test );
 
   while( ref_itr != reference.end() )
@@ -2069,9 +2019,8 @@ void test_container_iterators( Reference& reference, ReferenceValues& reference_
 
   BOOST_CHECK( test_itr == test.end() );
 
-
   // Test zig zag down (2 back, 1 forward)
-  ref_itr = init( reference );
+  ref_itr  = init( reference );
   test_itr = init( test );
 
   while( ref_itr != reference.begin() )
@@ -2139,20 +2088,20 @@ BOOST_AUTO_TEST_CASE( complex_merge_iterator )
     */
 
     std::set< std::string > reference = { "a", "b", "d", "e", "f", "h", "i", "k", "l", "n" };
-    std::map< std::string, std::string > reference_values {
-      { "a", "a4" },
-      { "b", "b5" },
-      { "d", "d5" },
-      { "e", "e3" },
-      { "f", "f4" },
-      { "h", "h2" },
-      { "i", "i5" },
-      { "k", "k3" },
-      { "l", "l1" },
-      { "n", "n2" }
+    std::map< std::string, std::string > reference_values{
+      {"a", "a4"},
+      {"b", "b5"},
+      {"d", "d5"},
+      {"e", "e3"},
+      {"f", "f4"},
+      {"h", "h2"},
+      {"i", "i5"},
+      {"k", "k3"},
+      {"l", "l1"},
+      {"n", "n2"}
     };
 
-    for (char c = 'a'; c <= 'o'; c++ )
+    for( char c = 'a'; c <= 'o'; c++ )
     {
       std::string key( 1, c );
       delta_queue.back()->put( key, key + "1" );
@@ -2194,25 +2143,33 @@ BOOST_AUTO_TEST_CASE( complex_merge_iterator )
 
     merge_state m_state( delta_queue.back() );
 
-    test_container_iterators( reference, reference_values, m_state, []( auto& m_state )
-                                                                    {
-                                                                      return m_state.begin();
-                                                                    } );
+    test_container_iterators( reference,
+                              reference_values,
+                              m_state,
+                              []( auto& m_state )
+                              {
+                                return m_state.begin();
+                              } );
 
-    test_container_iterators( reference, reference_values, m_state, []( auto& m_state )
-                                                                    {
-                                                                      return m_state.end();
-                                                                    } );
+    test_container_iterators( reference,
+                              reference_values,
+                              m_state,
+                              []( auto& m_state )
+                              {
+                                return m_state.end();
+                              } );
 
-
-    for (char c = 'a'; c <= 'o'; c++ )
+    for( char c = 'a'; c <= 'o'; c++ )
     {
       std::string key( 1, c );
 
-      test_container_iterators( reference, reference_values, m_state, [&]( auto& m_state )
-                                                                      {
-                                                                        return m_state.lower_bound( key );
-                                                                      } );
+      test_container_iterators( reference,
+                                reference_values,
+                                m_state,
+                                [ & ]( auto& m_state )
+                                {
+                                  return m_state.lower_bound( key );
+                                } );
       /*
       test_container_iterators( reference, reference_values, m_state, [&]( merge_state& m_state )
                                                                       {
@@ -2238,9 +2195,9 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
     auto state_1 = db.create_writable_node( root_id, state_1_id, protocol::block_header(), shared_db_lock );
     BOOST_REQUIRE( state_1 );
 
-    std::string a1_val = "a1", b1_val = "b1", c1_val = "c1", d1_val = "d1", e1_val = "e1", f1_val = "f1",
-                g1_val = "g1", h1_val = "h1", i1_val = "i1", j1_val = "j1", k1_val = "k1", l1_val = "l1",
-                m1_val = "m1", n1_val = "n1", o1_val = "o1";
+    std::string a1_val = "a1", b1_val = "b1", c1_val = "c1", d1_val = "d1", e1_val = "e1", f1_val = "f1", g1_val = "g1",
+                h1_val = "h1", i1_val = "i1", j1_val = "j1", k1_val = "k1", l1_val = "l1", m1_val = "m1", n1_val = "n1",
+                o1_val = "o1";
 
     // Add buffer objects before the space
     space.set_id( 1 );
@@ -2326,42 +2283,42 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
 
     db.finalize_node( state_5_id, shared_db_lock );
 
-    std::map< std::string, std::string > reference_values {
-      { "a", "a4" },
-      { "b", "b5" },
-      { "d", "d5" },
-      { "e", "e3" },
-      { "f", "f4" },
-      { "h", "h2" },
-      { "i", "i5" },
-      { "k", "k3" },
-      { "l", "l1" },
-      { "n", "n2" }
+    std::map< std::string, std::string > reference_values{
+      {"a", "a4"},
+      {"b", "b5"},
+      {"d", "d5"},
+      {"e", "e3"},
+      {"f", "f4"},
+      {"h", "h2"},
+      {"i", "i5"},
+      {"k", "k3"},
+      {"l", "l1"},
+      {"n", "n2"}
     };
 
     std::string key = "";
 
     for( auto itr = reference_values.begin(); itr != reference_values.end(); ++itr )
     {
-      auto [next_value, next_key] = state_5->get_next_object( space, key );
+      auto [ next_value, next_key ] = state_5->get_next_object( space, key );
 
-      BOOST_REQUIRE(next_value);
+      BOOST_REQUIRE( next_value );
       BOOST_CHECK_EQUAL( *next_value, itr->second );
       BOOST_CHECK_EQUAL( next_key, itr->first );
 
       key = itr->first;
     }
 
-    auto [next_value, next_key] = state_5->get_next_object( space, "n" );
-    BOOST_CHECK(!next_value);
+    auto [ next_value, next_key ] = state_5->get_next_object( space, "n" );
+    BOOST_CHECK( !next_value );
     BOOST_CHECK_EQUAL( next_key, "" );
 
     key = "z";
     for( auto itr = reference_values.rbegin(); itr != reference_values.rend(); ++itr )
     {
-      auto [prev_value, prev_key] = state_5->get_prev_object( space, key );
+      auto [ prev_value, prev_key ] = state_5->get_prev_object( space, key );
 
-      BOOST_REQUIRE(prev_value);
+      BOOST_REQUIRE( prev_value );
       BOOST_CHECK_EQUAL( *prev_value, itr->second );
       BOOST_CHECK_EQUAL( prev_key, itr->first );
 
@@ -2369,9 +2326,9 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
     }
 
     {
-      auto [prev_value, prev_key] = state_5->get_prev_object( space, key );
+      auto [ prev_value, prev_key ] = state_5->get_prev_object( space, key );
 
-      BOOST_CHECK(!prev_value);
+      BOOST_CHECK( !prev_value );
       BOOST_CHECK_EQUAL( prev_key, "" );
     }
 
@@ -2393,7 +2350,7 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
     db.finalize_node( state_6_id, shared_db_lock );
 
     {
-      auto [prev_value, prev_key] = state_6->get_prev_object( space, "z" );
+      auto [ prev_value, prev_key ] = state_6->get_prev_object( space, "z" );
 
       BOOST_CHECK( !prev_value );
       BOOST_CHECK_EQUAL( prev_key, "" );
@@ -2404,7 +2361,8 @@ BOOST_AUTO_TEST_CASE( next_and_prev_objects )
 
 BOOST_AUTO_TEST_CASE( prev_object_exception )
 {
-  try {
+  try
+  {
     auto shared_db_lock = db.get_shared_lock();
     auto root_id        = db.get_root( shared_db_lock )->id();
     object_space space;
@@ -2425,7 +2383,7 @@ BOOST_AUTO_TEST_CASE( prev_object_exception )
     db.finalize_node( state_1_id, shared_db_lock );
 
     {
-      auto [prev_value, prev_key] = state_1->get_prev_object( space, "z" );
+      auto [ prev_value, prev_key ] = state_1->get_prev_object( space, "z" );
 
       BOOST_CHECK( prev_value );
       BOOST_CHECK_EQUAL( prev_key, "b" );
@@ -2441,7 +2399,7 @@ BOOST_AUTO_TEST_CASE( prev_object_exception )
     db.finalize_node( state_2_id, shared_db_lock );
 
     {
-      auto [prev_value, prev_key] = state_2->get_prev_object( space, "z" );
+      auto [ prev_value, prev_key ] = state_2->get_prev_object( space, "z" );
 
       BOOST_CHECK( !prev_value );
       BOOST_CHECK_EQUAL( prev_key, "" );

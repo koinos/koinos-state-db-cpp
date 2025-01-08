@@ -15,7 +15,7 @@ public:
   using size_type  = detail::size_type;
 
   abstract_backend();
-  virtual ~abstract_backend(){};
+  virtual ~abstract_backend() {};
 
   virtual iterator begin() = 0;
   virtual iterator end()   = 0;

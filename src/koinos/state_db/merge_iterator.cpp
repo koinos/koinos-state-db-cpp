@@ -191,11 +191,11 @@ merge_iterator& merge_iterator::operator--()
     // Some indices may not have had a value less than the previous head, so they will show up first,
     // we need to increment through those values until we get the the new valid least value.
     // We also could have dirty values show up first, so we need to get past those as well.
-      while( least_itr != rev_order_idx.end() && least_itr->valid()
-             && ( is_dirty( least_itr ) || ( head_key && least_itr->itr.key() >= *head_key ) ) )
-      {
-        ++least_itr;
-      }
+    while( least_itr != rev_order_idx.end() && least_itr->valid()
+           && ( is_dirty( least_itr ) || ( head_key && least_itr->itr.key() >= *head_key ) ) )
+    {
+      ++least_itr;
+    }
 
     // Now least_itr points to the new least value, unless it is end()
     if( least_itr != rev_order_idx.end() )
@@ -205,15 +205,15 @@ merge_iterator& merge_iterator::operator--()
       // At this point every value is either end or less than or equal to the new value.
       // We need to loop through each of the other iterators and increment them past this value.
       auto& forward_idx = _itr_revision_index.template get< by_order_revision >();
-      auto forward_itr = forward_idx.begin();
+      auto forward_itr  = forward_idx.begin();
 
       while( forward_itr != forward_idx.end() && forward_itr->itr.key() < least_key )
       {
         _itr_revision_index.modify( _itr_revision_index.iterator_to( *forward_itr ),
-                                  []( iterator_wrapper& i )
-                                  {
-                                    ++( i.itr );
-                                  } );
+                                    []( iterator_wrapper& i )
+                                    {
+                                      ++( i.itr );
+                                    } );
         forward_itr = forward_idx.begin();
       }
     }
