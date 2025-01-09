@@ -13,7 +13,7 @@ FetchContent_MakeAvailable(koinos_cmake)
 include("${koinos_cmake_SOURCE_DIR}/Koinos.cmake")
 
 project(koinos_state_db
-  VERSION 1.1.1
+  VERSION 1.1.2
   DESCRIPTION "The Koinos statedb library"
   LANGUAGES CXX C)
 
