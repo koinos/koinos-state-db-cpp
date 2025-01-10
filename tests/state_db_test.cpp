@@ -11,7 +11,6 @@
 #include <koinos/state_db/state_db.hpp>
 #include <koinos/state_db/state_delta.hpp>
 #include <koinos/util/conversion.hpp>
-#include <koinos/util/hex.hpp>
 #include <koinos/util/random.hpp>
 
 #include <deque>
@@ -50,11 +49,7 @@ struct state_db_fixture
     temp = std::filesystem::temp_directory_path() / util::random_alphanumeric( 8 );
     std::filesystem::create_directory( temp );
 
-    db.open(
-      temp,
-      [ & ]( state_db::state_node_ptr root ) {},
-      fork_resolution_algorithm::fifo,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_db::state_node_ptr root ) {}, fork_resolution_algorithm::fifo, db.get_unique_lock() );
   }
 
   ~state_db_fixture()
@@ -622,11 +617,7 @@ BOOST_AUTO_TEST_CASE( reset_test )
     BOOST_CHECK_THROW( db.commit_node( crypto::hash( crypto::multicodec::sha2_256, 1 ), db.get_unique_lock() ),
                        koinos::exception );
 
-    db.open(
-      temp,
-      []( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, []( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
 
@@ -658,11 +649,7 @@ BOOST_AUTO_TEST_CASE( reset_test )
     shared_db_lock.reset();
     state_1.reset();
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      []( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, []( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     // State node was committed and should exist on open
     shared_db_lock = db.get_shared_lock();
@@ -1251,11 +1238,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     BOOST_TEST_MESSAGE( "Test block time fork resolution" );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::block_time_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::block_time_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     header.set_timestamp( 100 );
@@ -1307,11 +1290,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     BOOST_TEST_MESSAGE( "Test pob fork resolution" );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     std::string signer1 = "signer1";
@@ -1376,11 +1355,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     state_5.reset();
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     // BEGIN: Create two forks, then double produce on the newer fork
@@ -1484,11 +1459,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     state_5.reset();
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     // BEGIN: Create two forks, then double produce on the older fork
@@ -1581,11 +1552,7 @@ BOOST_AUTO_TEST_CASE( fork_resolution )
     state_5.reset();
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_node_ptr ) {},
-      &state_db::pob_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_node_ptr ) {}, &state_db::pob_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     // BEGIN: Edge case when double production is the first block
@@ -1680,11 +1647,7 @@ BOOST_AUTO_TEST_CASE( restart_cache )
     db.commit_node( state_id, db.get_unique_lock() );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
     shared_db_lock = db.get_shared_lock();
 
     state_1 = db.get_root( shared_db_lock );
@@ -1734,11 +1697,7 @@ BOOST_AUTO_TEST_CASE( persistence )
     db.commit_node( state_id, db.get_unique_lock() );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      temp,
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( temp, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
     state_1        = db.get_node( state_id, shared_db_lock );
@@ -1753,11 +1712,7 @@ BOOST_AUTO_TEST_CASE( persistence )
     db.close( db.get_unique_lock() );
 
     BOOST_TEST_MESSAGE( "Checking transience when backed by std::map" );
-    db.open(
-      {},
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( {}, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
     state_1        = db.create_writable_node( db.get_head( shared_db_lock )->id(),
@@ -1777,11 +1732,7 @@ BOOST_AUTO_TEST_CASE( persistence )
     db.commit_node( state_id, db.get_unique_lock() );
 
     db.close( db.get_unique_lock() );
-    db.open(
-      {},
-      [ & ]( state_db::state_node_ptr root ) {},
-      &state_db::fifo_comparator,
-      db.get_unique_lock() );
+    db.open( {}, [ & ]( state_db::state_node_ptr root ) {}, &state_db::fifo_comparator, db.get_unique_lock() );
 
     shared_db_lock = db.get_shared_lock();
     state_1        = db.get_node( state_id, shared_db_lock );
@@ -1912,6 +1863,547 @@ BOOST_AUTO_TEST_CASE( get_all_nodes )
     BOOST_CHECK( nodes[ 0 ]->id() == state_2a_id );
     BOOST_CHECK( nodes[ 1 ]->id() == state_1a_id );
     BOOST_CHECK( nodes[ 2 ]->id() == state_2b_id );
+  }
+  KOINOS_CATCH_LOG_AND_RETHROW( info )
+}
+
+template< typename Reference, typename ReferenceValues, typename Test, typename Initializer >
+void test_container_iterators( Reference& reference, ReferenceValues& reference_values, Test& test, Initializer&& init )
+{
+  // Test to end, to begin, and to end
+  auto ref_itr  = init( reference );
+  auto test_itr = init( test );
+
+  if( ref_itr == reference.end() )
+    BOOST_REQUIRE( test_itr == test.end() );
+  else
+  {
+    BOOST_REQUIRE( test_itr != test.end() );
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+  // Test to begin, to end, and to begin
+  ref_itr  = init( reference );
+  test_itr = init( test );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+
+  // Test zig zag up (2 forward, 1 back)
+  ref_itr  = init( reference );
+  test_itr = init( test );
+
+  while( ref_itr != reference.end() )
+  {
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+    {
+      BOOST_CHECK( test_itr == test.end() );
+      break;
+    }
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+  }
+
+  BOOST_CHECK( test_itr == test.end() );
+
+  // Test zig zag down (2 back, 1 forward)
+  ref_itr  = init( reference );
+  test_itr = init( test );
+
+  while( ref_itr != reference.begin() )
+  {
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+
+    if( ref_itr == reference.begin() )
+      break;
+
+    BOOST_REQUIRE( test_itr != test.begin() );
+
+    --ref_itr;
+    --test_itr;
+
+    BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+    BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+
+    ++ref_itr;
+    ++test_itr;
+
+    if( ref_itr == reference.end() )
+      BOOST_CHECK( test_itr == test.end() );
+    else
+    {
+      BOOST_REQUIRE( test_itr != test.end() );
+      BOOST_CHECK_EQUAL( *ref_itr, test_itr.key() );
+      BOOST_CHECK_EQUAL( reference_values.at( *ref_itr ), *test_itr );
+    }
+  }
+
+  BOOST_CHECK( test_itr == test.begin() );
+}
+
+BOOST_AUTO_TEST_CASE( complex_merge_iterator )
+{
+  try
+  {
+    std::filesystem::path temp = std::filesystem::temp_directory_path() / koinos::util::random_alphanumeric( 8 );
+    std::filesystem::create_directory( temp );
+
+    using state_delta_ptr = std::shared_ptr< state_delta >;
+    std::deque< state_delta_ptr > delta_queue;
+    delta_queue.emplace_back( std::make_shared< state_delta >( temp ) );
+
+    /*
+    This is the test case, using the notation in docs/merge_iterator.md
+
+    1: |a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|
+    2: |c|d|g|h|j|n|                    RM: b, f
+    3: |b|d|e|k|o|                      RM: g, j, m
+    4: |a|b|f|j|                        RM: c, o
+    5: |b|d|i|                          RM: j
+
+    The ordered keys are:
+    a, b, d, e, f, h, i, k, l ,n
+
+    The ordered values are:
+    a4, b5, d5, e3, f4, h2, i5, k3, l1, n2
+    */
+
+    std::set< std::string > reference = { "a", "b", "d", "e", "f", "h", "i", "k", "l", "n" };
+    std::map< std::string, std::string > reference_values{
+      {"a", "a4"},
+      {"b", "b5"},
+      {"d", "d5"},
+      {"e", "e3"},
+      {"f", "f4"},
+      {"h", "h2"},
+      {"i", "i5"},
+      {"k", "k3"},
+      {"l", "l1"},
+      {"n", "n2"}
+    };
+
+    for( char c = 'a'; c <= 'o'; c++ )
+    {
+      std::string key( 1, c );
+      delta_queue.back()->put( key, key + "1" );
+    }
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "c", "c2" );
+    delta_queue.back()->put( "d", "d2" );
+    delta_queue.back()->put( "g", "g2" );
+    delta_queue.back()->put( "h", "h2" );
+    delta_queue.back()->put( "j", "j2" );
+    delta_queue.back()->put( "n", "n2" );
+    delta_queue.back()->erase( "b" );
+    delta_queue.back()->erase( "f" );
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "b", "b3" );
+    delta_queue.back()->put( "d", "d3" );
+    delta_queue.back()->put( "e", "e3" );
+    delta_queue.back()->put( "k", "k3" );
+    delta_queue.back()->put( "o", "o3" );
+    delta_queue.back()->erase( "g" );
+    delta_queue.back()->erase( "j" );
+    delta_queue.back()->erase( "m" );
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "a", "a4" );
+    delta_queue.back()->put( "b", "b4" );
+    delta_queue.back()->put( "f", "f4" );
+    delta_queue.back()->put( "j", "j4" );
+    delta_queue.back()->erase( "c" );
+    delta_queue.back()->erase( "o" );
+
+    delta_queue.emplace_back( delta_queue.back()->make_child( delta_queue.back()->id() ) );
+    delta_queue.back()->put( "b", "b5" );
+    delta_queue.back()->put( "d", "d5" );
+    delta_queue.back()->put( "i", "i5" );
+    delta_queue.back()->erase( "j" );
+
+    merge_state m_state( delta_queue.back() );
+
+    test_container_iterators( reference,
+                              reference_values,
+                              m_state,
+                              []( auto& m_state )
+                              {
+                                return m_state.begin();
+                              } );
+
+    test_container_iterators( reference,
+                              reference_values,
+                              m_state,
+                              []( auto& m_state )
+                              {
+                                return m_state.end();
+                              } );
+
+    for( char c = 'a'; c <= 'o'; c++ )
+    {
+      std::string key( 1, c );
+
+      test_container_iterators( reference,
+                                reference_values,
+                                m_state,
+                                [ & ]( auto& m_state )
+                                {
+                                  return m_state.lower_bound( key );
+                                } );
+      /*
+      test_container_iterators( reference, reference_values, m_state, [&]( merge_state& m_state )
+                                                                      {
+                                                                        return m_state.upper_bound( key );
+                                                                      } );
+      */
+    }
+  }
+  KOINOS_CATCH_LOG_AND_RETHROW( info )
+}
+
+BOOST_AUTO_TEST_CASE( next_and_prev_objects )
+{
+  try
+  {
+    BOOST_TEST_MESSAGE( "Create state nodes" );
+
+    auto shared_db_lock = db.get_shared_lock();
+    auto root_id        = db.get_root( shared_db_lock )->id();
+    object_space space;
+
+    crypto::multihash state_1_id = crypto::hash( crypto::multicodec::sha2_256, 0x01 );
+    auto state_1 = db.create_writable_node( root_id, state_1_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_1 );
+
+    std::string a1_val = "a1", b1_val = "b1", c1_val = "c1", d1_val = "d1", e1_val = "e1", f1_val = "f1", g1_val = "g1",
+                h1_val = "h1", i1_val = "i1", j1_val = "j1", k1_val = "k1", l1_val = "l1", m1_val = "m1", n1_val = "n1",
+                o1_val = "o1";
+
+    // Add buffer objects before the space
+    space.set_id( 1 );
+    state_1->put_object( space, "a", &a1_val );
+
+    space.set_id( 2 );
+    state_1->put_object( space, "a", &a1_val );
+    state_1->put_object( space, "b", &b1_val );
+    state_1->put_object( space, "c", &c1_val );
+    state_1->put_object( space, "d", &d1_val );
+    state_1->put_object( space, "e", &e1_val );
+    state_1->put_object( space, "f", &f1_val );
+    state_1->put_object( space, "g", &g1_val );
+    state_1->put_object( space, "h", &h1_val );
+    state_1->put_object( space, "i", &i1_val );
+    state_1->put_object( space, "j", &j1_val );
+    state_1->put_object( space, "k", &k1_val );
+    state_1->put_object( space, "l", &l1_val );
+    state_1->put_object( space, "m", &m1_val );
+    state_1->put_object( space, "n", &n1_val );
+    state_1->put_object( space, "o", &o1_val );
+
+    db.finalize_node( state_1_id, shared_db_lock );
+
+    crypto::multihash state_2_id = crypto::hash( crypto::multicodec::sha2_256, 0x02 );
+    auto state_2 = db.create_writable_node( state_1_id, state_2_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_2 );
+
+    std::string c2_val = "c2", d2_val = "d2", g2_val = "g2", h2_val = "h2", j2_val = "j2", n2_val = "n2";
+
+    state_2->put_object( space, "c", &c2_val );
+    state_2->put_object( space, "d", &d2_val );
+    state_2->put_object( space, "g", &g2_val );
+    state_2->put_object( space, "h", &h2_val );
+    state_2->put_object( space, "j", &j2_val );
+    state_2->put_object( space, "n", &n2_val );
+    state_2->remove_object( space, "b" );
+    state_2->remove_object( space, "f" );
+
+    db.finalize_node( state_2_id, shared_db_lock );
+
+    crypto::multihash state_3_id = crypto::hash( crypto::multicodec::sha2_256, 0x03 );
+    auto state_3 = db.create_writable_node( state_2_id, state_3_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_3 );
+
+    std::string b3_val = "b3", d3_val = "d3", e3_val = "e3", k3_val = "k3", o3_val = "o3";
+
+    state_3->put_object( space, "b", &b3_val );
+    state_3->put_object( space, "d", &d3_val );
+    state_3->put_object( space, "e", &e3_val );
+    state_3->put_object( space, "k", &k3_val );
+    state_3->put_object( space, "o", &o3_val );
+    state_3->remove_object( space, "g" );
+    state_3->remove_object( space, "j" );
+    state_3->remove_object( space, "m" );
+
+    db.finalize_node( state_3_id, shared_db_lock );
+
+    crypto::multihash state_4_id = crypto::hash( crypto::multicodec::sha2_256, 0x04 );
+    auto state_4 = db.create_writable_node( state_3_id, state_4_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_4 );
+
+    std::string a4_val = "a4", b4_val = "b4", f4_val = "f4", j4_val = "j4";
+
+    state_4->put_object( space, "a", &a4_val );
+    state_4->put_object( space, "b", &b4_val );
+    state_4->put_object( space, "f", &f4_val );
+    state_4->put_object( space, "j", &j4_val );
+    state_4->remove_object( space, "c" );
+    state_4->remove_object( space, "o" );
+
+    db.finalize_node( state_4_id, shared_db_lock );
+
+    crypto::multihash state_5_id = crypto::hash( crypto::multicodec::sha2_256, 0x05 );
+    auto state_5 = db.create_writable_node( state_4_id, state_5_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_5 );
+
+    std::string b5_val = "b5", d5_val = "d5", i5_val = "i5";
+    state_5->put_object( space, "b", &b5_val );
+    state_5->put_object( space, "d", &d5_val );
+    state_5->put_object( space, "i", &i5_val );
+    state_5->remove_object( space, "j" );
+
+    db.finalize_node( state_5_id, shared_db_lock );
+
+    std::map< std::string, std::string > reference_values{
+      {"a", "a4"},
+      {"b", "b5"},
+      {"d", "d5"},
+      {"e", "e3"},
+      {"f", "f4"},
+      {"h", "h2"},
+      {"i", "i5"},
+      {"k", "k3"},
+      {"l", "l1"},
+      {"n", "n2"}
+    };
+
+    std::string key = "";
+
+    for( auto itr = reference_values.begin(); itr != reference_values.end(); ++itr )
+    {
+      auto [ next_value, next_key ] = state_5->get_next_object( space, key );
+
+      BOOST_REQUIRE( next_value );
+      BOOST_CHECK_EQUAL( *next_value, itr->second );
+      BOOST_CHECK_EQUAL( next_key, itr->first );
+
+      key = itr->first;
+    }
+
+    auto [ next_value, next_key ] = state_5->get_next_object( space, "n" );
+    BOOST_CHECK( !next_value );
+    BOOST_CHECK_EQUAL( next_key, "" );
+
+    key = "z";
+    for( auto itr = reference_values.rbegin(); itr != reference_values.rend(); ++itr )
+    {
+      auto [ prev_value, prev_key ] = state_5->get_prev_object( space, key );
+
+      BOOST_REQUIRE( prev_value );
+      BOOST_CHECK_EQUAL( *prev_value, itr->second );
+      BOOST_CHECK_EQUAL( prev_key, itr->first );
+
+      key = itr->first;
+    }
+
+    {
+      auto [ prev_value, prev_key ] = state_5->get_prev_object( space, key );
+
+      BOOST_CHECK( !prev_value );
+      BOOST_CHECK_EQUAL( prev_key, "" );
+    }
+
+    crypto::multihash state_6_id = crypto::hash( crypto::multicodec::sha2_256, 0x06 );
+    auto state_6 = db.create_writable_node( state_5_id, state_6_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_6 );
+
+    state_6->remove_object( space, "a" );
+    state_6->remove_object( space, "b" );
+    state_6->remove_object( space, "d" );
+    state_6->remove_object( space, "e" );
+    state_6->remove_object( space, "f" );
+    state_6->remove_object( space, "h" );
+    state_6->remove_object( space, "i" );
+    state_6->remove_object( space, "k" );
+    state_6->remove_object( space, "l" );
+    state_6->remove_object( space, "n" );
+
+    db.finalize_node( state_6_id, shared_db_lock );
+
+    {
+      auto [ prev_value, prev_key ] = state_6->get_prev_object( space, "z" );
+
+      BOOST_CHECK( !prev_value );
+      BOOST_CHECK_EQUAL( prev_key, "" );
+    }
+  }
+  KOINOS_CATCH_LOG_AND_RETHROW( info )
+}
+
+BOOST_AUTO_TEST_CASE( prev_object_exception )
+{
+  try
+  {
+    auto shared_db_lock = db.get_shared_lock();
+    auto root_id        = db.get_root( shared_db_lock )->id();
+    object_space space;
+
+    crypto::multihash state_1_id = crypto::hash( crypto::multicodec::sha2_256, 0x01 );
+    auto state_1 = db.create_writable_node( root_id, state_1_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_1 );
+
+    std::string a_val = "a", b_val = "b";
+
+    space.set_id( 1 );
+    state_1->put_object( space, "a", &a_val );
+
+    space.set_id( 2 );
+    state_1->put_object( space, "a", &a_val );
+    state_1->put_object( space, "b", &b_val );
+
+    db.finalize_node( state_1_id, shared_db_lock );
+
+    {
+      auto [ prev_value, prev_key ] = state_1->get_prev_object( space, "z" );
+
+      BOOST_CHECK( prev_value );
+      BOOST_CHECK_EQUAL( prev_key, "b" );
+    }
+
+    crypto::multihash state_2_id = crypto::hash( crypto::multicodec::sha2_256, 0x02 );
+    auto state_2 = db.create_writable_node( state_1_id, state_2_id, protocol::block_header(), shared_db_lock );
+    BOOST_REQUIRE( state_2 );
+
+    state_2->remove_object( space, "a" );
+    state_2->remove_object( space, "b" );
+
+    db.finalize_node( state_2_id, shared_db_lock );
+
+    {
+      auto [ prev_value, prev_key ] = state_2->get_prev_object( space, "z" );
+
+      BOOST_CHECK( !prev_value );
+      BOOST_CHECK_EQUAL( prev_key, "" );
+    }
   }
   KOINOS_CATCH_LOG_AND_RETHROW( info )
 }

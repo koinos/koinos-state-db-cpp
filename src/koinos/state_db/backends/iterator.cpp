@@ -52,7 +52,7 @@ bool operator==( const iterator& x, const iterator& y )
 {
   if( x.valid() && y.valid() )
   {
-    return *x == *y;
+    return x.key() == y.key();
   }
 
   return x.valid() == y.valid();
