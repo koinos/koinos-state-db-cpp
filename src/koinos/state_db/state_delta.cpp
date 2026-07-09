@@ -30,9 +30,9 @@ void state_delta::put( const key_type& k, const value_type& v )
   _backend->put( k, v );
 }
 
-void state_delta::erase( const key_type& k )
+void state_delta::erase( const key_type& k, bool preserve_tombstone )
 {
-  if( find( k ) )
+  if( find( k ) || preserve_tombstone )
   {
     _backend->erase( k );
     _removed_objects.insert( k );
@@ -209,34 +209,43 @@ crypto::multihash state_delta::merkle_root() const
 {
   if( !_merkle_root )
   {
-    std::vector< std::string > object_keys;
-    object_keys.reserve( _backend->size() + _removed_objects.size() );
-    for( auto itr = _backend->begin(); itr != _backend->end(); ++itr )
-    {
-      object_keys.push_back( itr.key() );
-    }
-
-    for( const auto& removed: _removed_objects )
-    {
-      object_keys.push_back( removed );
-    }
-
-    std::sort( object_keys.begin(), object_keys.end() );
-
-    std::vector< crypto::multihash > merkle_leafs;
-    merkle_leafs.reserve( object_keys.size() * 2 );
-
-    for( const auto& key: object_keys )
-    {
-      merkle_leafs.emplace_back( crypto::hash( crypto::multicodec::sha2_256, key ) );
-      auto val_ptr = _backend->get( key );
-      merkle_leafs.emplace_back( crypto::hash( crypto::multicodec::sha2_256, val_ptr ? *val_ptr : std::string() ) );
-    }
-
-    _merkle_root = crypto::merkle_tree( crypto::multicodec::sha2_256, merkle_leafs ).root()->hash();
+    _merkle_root = calculate_merkle_root();
   }
 
   return *_merkle_root;
+}
+
+// Computes the delta merkle root without reading or populating the cached value.
+// Mutations do not invalidate _merkle_root, so callers that may mutate the delta
+// afterwards (pending root inspection of a writable node) must use this instead
+// of merkle_root().
+crypto::multihash state_delta::calculate_merkle_root() const
+{
+  std::vector< std::string > object_keys;
+  object_keys.reserve( _backend->size() + _removed_objects.size() );
+  for( auto itr = _backend->begin(); itr != _backend->end(); ++itr )
+  {
+    object_keys.push_back( itr.key() );
+  }
+
+  for( const auto& removed: _removed_objects )
+  {
+    object_keys.push_back( removed );
+  }
+
+  std::sort( object_keys.begin(), object_keys.end() );
+
+  std::vector< crypto::multihash > merkle_leafs;
+  merkle_leafs.reserve( object_keys.size() * 2 );
+
+  for( const auto& key: object_keys )
+  {
+    merkle_leafs.emplace_back( crypto::hash( crypto::multicodec::sha2_256, key ) );
+    auto val_ptr = _backend->get( key );
+    merkle_leafs.emplace_back( crypto::hash( crypto::multicodec::sha2_256, val_ptr ? *val_ptr : std::string() ) );
+  }
+
+  return crypto::merkle_tree( crypto::multicodec::sha2_256, merkle_leafs ).root()->hash();
 }
 
 const protocol::block_header& state_delta::block_header() const

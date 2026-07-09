@@ -102,8 +102,9 @@ public:
   std::pair< const object_value*, const object_key > get_prev_object( const object_space& space,
                                                                       const object_key& key ) const;
   int64_t put_object( const object_space& space, const object_key& key, const object_value* val );
-  int64_t remove_object( const object_space& space, const object_key& key );
+  int64_t remove_object( const object_space& space, const object_key& key, bool preserve_tombstone = false );
   crypto::multihash merkle_root() const;
+  crypto::multihash pending_merkle_root() const;
   std::vector< protocol::state_delta_entry > get_delta_entries() const;
 
   state_delta_ptr _state;
@@ -1086,7 +1087,7 @@ int64_t state_node_impl::put_object( const object_space& space, const object_key
   return bytes_used;
 }
 
-int64_t state_node_impl::remove_object( const object_space& space, const object_key& key )
+int64_t state_node_impl::remove_object( const object_space& space, const object_key& key, bool preserve_tombstone )
 {
   KOINOS_ASSERT( !_state->is_finalized(), node_finalized, "cannot write to a finalized node" );
 
@@ -1104,7 +1105,7 @@ int64_t state_node_impl::remove_object( const object_space& space, const object_
     bytes_used -= key_string.size();
   }
 
-  _state->erase( key_string );
+  _state->erase( key_string, preserve_tombstone );
 
   return bytes_used;
 }
@@ -1112,6 +1113,11 @@ int64_t state_node_impl::remove_object( const object_space& space, const object_
 crypto::multihash state_node_impl::merkle_root() const
 {
   return _state->merkle_root();
+}
+
+crypto::multihash state_node_impl::pending_merkle_root() const
+{
+  return _state->calculate_merkle_root();
 }
 
 std::vector< protocol::state_delta_entry > state_node_impl::get_delta_entries() const
@@ -1154,6 +1160,11 @@ int64_t abstract_state_node::remove_object( const object_space& space, const obj
   return _impl->remove_object( space, key );
 }
 
+int64_t abstract_state_node::remove_object_preserve_tombstone( const object_space& space, const object_key& key )
+{
+  return _impl->remove_object( space, key, true );
+}
+
 bool abstract_state_node::is_finalized() const
 {
   return _impl->_state->is_finalized();
@@ -1163,6 +1174,11 @@ crypto::multihash abstract_state_node::merkle_root() const
 {
   KOINOS_ASSERT( is_finalized(), koinos::exception, "node must be finalized to calculate merkle root" );
   return _impl->merkle_root();
+}
+
+crypto::multihash abstract_state_node::pending_merkle_root() const
+{
+  return _impl->pending_merkle_root();
 }
 
 std::vector< protocol::state_delta_entry > abstract_state_node::get_delta_entries() const
